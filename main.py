@@ -4,11 +4,13 @@ from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
 import numpy as np
 import math
-
+import time
 # Window dimensions
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 
+#WINDOW_WIDTH = 1920
+#WINDOW_HEIGHT = 1080
 # Vertex shader (passes through vertex positions)
 VERTEX_SHADER = """
 #version 330 core
@@ -160,6 +162,8 @@ def main():
     metaball_location = glGetUniformLocation(shader, "metaballs")
     metaball_count_location = glGetUniformLocation(shader, "metaballcount")
 
+    time_location = glGetUniformLocation(shader, "time")
+    
     camera_pos = np.array([0.0, 0.0, 0.0], dtype=np.float32)
     camera_dir = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 
@@ -183,9 +187,17 @@ def main():
             [0.0, 0.0, -5.0, 1.0],  # Sphere 1: center (0,0,-5), radius 2
             [math.sin(math.radians(i)) * 10, 0.0, -5, 1.0],  # Sphere 2: center (2,0,-5), radius 1
         ], dtype=np.float32)
+        """
+        sphere_data = []
+        for x in range(1):
+            for y in range(-2,2):
+                sphere_data.append([0,0.0,y+-5,1.0])
+        sphere_data = np.array(sphere_data)
+        """
         pygame.event.set_grab(MouseGrabbed)
         #if MouseGrabbed:
             #pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
+        mouse_x, mouse_y = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
@@ -193,12 +205,15 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     MouseGrabbed = not MouseGrabbed
             if event.type == pygame.MOUSEMOTION:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
                 mouse_dx,mouse_dy = event.rel
-                if MouseGrabbed:
-                    pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
+                #if MouseGrabbed:
+                 #   pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
+        if MouseGrabbed:
+            pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
 
         # Get mouse movement
-        mouse_x, mouse_y = pygame.mouse.get_pos()
+        
         #print(mouse_x,mouse_y)
         if MouseGrabbed:
             pass
@@ -213,8 +228,8 @@ def main():
         sensitivity = 0.002
 
         # Update yaw and pitch
-        #yaw += mouse_dx * sensitivity
-        #pitch += mouse_dy * sensitivity
+        yaw += mouse_dx * sensitivity*-1
+        pitch += mouse_dy * sensitivity
 
         #print(camera_dir)
 
@@ -223,16 +238,23 @@ def main():
 
         # Movement controls
         keys = pygame.key.get_pressed()
+        print(yaw)
         if keys[K_w]:
             #camera_pos += camera_dir * 0.1
-            camera_pos[2]+= 0.1
+            camera_pos[2]+= -math.sin(yaw)*0.1
+            camera_pos[0]+= math.cos(yaw)*0.1
         if keys[K_s]:
             #camera_pos -= camera_dir * 0.1
-            camera_pos[2]-= 0.1
+            camera_pos[2]+= -math.sin(yaw)*-0.1
+            camera_pos[0]+= math.cos(yaw)*-0.1
+            #camera_pos[2]-= 0.1
         if keys[K_a]:
-            camera_pos[0] -= 0.1
+            #camera_pos[0] -= 0.1
+            camera_pos[2]+= -math.sin(yaw+math.radians(90))*0.1
+            camera_pos[0]+= math.cos(yaw+math.radians(90))*0.1
         if keys[K_d]:
-            camera_pos[0] += 0.1
+            camera_pos[2]+= -math.sin(yaw-math.radians(90))*0.1
+            camera_pos[0]+= math.cos(yaw-math.radians(90))*0.1
         if keys[K_q]:
             camera_pos[1] -= 0.1
         if keys[K_e]:
@@ -243,6 +265,7 @@ def main():
         camera_dir = camera_dir[:3]
 
         #print(sphere_data)
+        glUniform1f(time_location, time.time())
         try:
             #print(*camera_pos)
             #print("glUniform3f(camera_pos_location, *camera_pos)")
