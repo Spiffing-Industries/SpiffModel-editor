@@ -54,6 +54,9 @@ float perlinNoise(vec2 uv) {
 uniform vec2 resolution;
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
+uniform vec3 light_positions[64];
+uniform vec3 light_colors[64];
+uniform int light_count;
 
 uniform vec4 metaballs[64];
 uniform int metaballcount;
@@ -166,15 +169,20 @@ void main() {
     bool hit = false;
     //hit = true;
     float b = 0;
+    vec3 light_color = vec3(0,0,0);
     vec3 normal = vec3(0,1,0);
     for (float t = 0.0; t < max_distance; t += step_size) {
         current_pos += ray_dir * step_size;
         b += 1/(max_distance+step_size);
-        if (distance(vec3(3,2,-5),current_pos) < 1){
-            hit = true;
-            b = 0;
-            ray_dir = vec3(0,0,0);
-            break;
+        for (int i = 0; i < light_count; i++) {
+            vec3 light_position = light_positions[i];
+            if (distance(light_position,current_pos) < 1){
+                hit = true;
+                b = b*0.1;
+                ray_dir = vec3(0,0,0);
+                light_color = vec3(light_colors[i]);
+                break;
+            }
         }
         if (current_pos.y < -2){
             
@@ -214,7 +222,7 @@ void main() {
             //b = b*2;
 
         }
-        fragColor = vec4(b, 0.0, 0.0, 1.0); // Red for hit
+        fragColor = vec4(b*light_color, 1.0); // Red for hit
         //fragColor = vec4(1, 0.0, 0.0, 1.0); // Red for hit
         //fragColor = vec4(abs(ray_dir),1.0);
     } else {

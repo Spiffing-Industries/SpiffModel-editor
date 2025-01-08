@@ -162,6 +162,10 @@ def main():
     metaball_location = glGetUniformLocation(shader, "metaballs")
     metaball_count_location = glGetUniformLocation(shader, "metaballcount")
 
+    lights_location = glGetUniformLocation(shader, "light_positions")
+    lights_color_location = glGetUniformLocation(shader, "light_colors")
+    lights_amount_location = glGetUniformLocation(shader, "light_count")
+
     time_location = glGetUniformLocation(shader, "time")
     
     camera_pos = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -173,6 +177,9 @@ def main():
         [0.0, 0.0, -5.0, 2.0],  # Sphere 1: center (0,0,-5), radius 2
         [2, 0.0, -5.0, 1.0],  # Sphere 2: center (2,0,-5), radius 1
     ], dtype=np.float32)
+
+    light_positions = np.array([[3.0,2.0,-5.0],[5.0,2.0,-5.0]], dtype=np.float32)
+    lights_colors = np.array([[0.0,1.0,0.0],[0.0,0.0,1.0]], dtype=np.float32)
 
     last_mouse_x, last_mouse_y = pygame.mouse.get_pos()
 
@@ -273,6 +280,9 @@ def main():
             #print("glUniform3f(camera_dir_location, *camera_dir)")
             glUniform3f(camera_dir_location, *camera_dir)
             glUniform1i(metaball_count_location, len(sphere_data))
+            glUniform1i(lights_amount_location, len(light_positions))
+            glUniform3fv(lights_location, len(light_positions),light_positions.flatten())
+            glUniform3fv(lights_color_location, len(light_positions),lights_colors.flatten())
             glUniform4fv(metaball_location, len(sphere_data), sphere_data.flatten())
         except Exception as e:
             print(e)
