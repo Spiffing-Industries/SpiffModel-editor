@@ -88,8 +88,19 @@ void main() {
 }
 """
 
-with open("Fragment-Shader.c") as file:
-    FRAGMENT_SHADER = file.read()
+
+
+for fragment_shader_file_path in ["Fragment-Shader.c","_internals/Fragment-Shader.c"]:
+    try:
+        with open(fragment_shader_file_path) as file:
+            FRAGMENT_SHADER = file.read()
+            break
+    except FileNotFoundError as e:
+        print(e)
+        continue
+
+
+
 
 def create_shader_program():
     return compileProgram(
