@@ -61,6 +61,13 @@ uniform int light_count;
 uniform vec4 metaballs[64];
 uniform int metaballcount;
 
+uniform vec4 ObjectsMeshes[64];
+uniform float ObjectID[64];
+uniform float ObjectIDList[64];
+
+uniform int ObjectCount;
+uniform int ObjectMeshCount;
+
 uniform float time;
 
 bool isObjectAt(vec3 point) {
@@ -122,6 +129,58 @@ vec3 calculateNormal(vec3 point) {
     }
     vec3 center = metaballs[closestIndex].xyz;
     float radius = metaballs[closestIndex].w;
+    dx = (radius / distance(point + vec3(eps, 0.0, 0.0), center)) - (radius / distance(point - vec3(eps, 0.0, 0.0), center));
+    dy = (radius / distance(point + vec3(0.0, eps, 0.0), center)) - (radius / distance(point - vec3(0.0, eps, 0.0), center));
+    dz = (radius / distance(point + vec3(0.0, 0.0, eps), center)) - (radius / distance(point - vec3(0.0, 0.0, eps), center));
+
+    // Combine the partial derivatives into the gradient
+    vec3 gradient = vec3(dx, dy, dz) / (2.0 * eps);
+    //vec3 gradient = vec3(dx, dy, dz);
+    return normalize(gradient); // Normalize to get the unit normal
+}
+
+vec3 calculateObjectNormal(vec3 point,float ID) {
+    float eps = 0.01; // Small offset for finite difference calculation
+    float value = 0.0;
+
+    int closestIndex = 0;
+    
+    float closestDistance = distance(point,ObjectsMeshes[closestIndex].xyz);
+
+    closestDistance = 1000;
+
+    // Evaluate the scalar field at the given point
+    for (int i = 0; i < ObjectMeshCount; i++) {
+        if (ObjectID[i]== ID){
+        vec3 center = ObjectsMeshes[i].xyz;
+        float radius = ObjectsMeshes[i].w;
+        float dist = distance(point, center);
+        if (dist < closestDistance){
+            closestIndex = i;
+            closestDistance = distance(point,metaballs[closestIndex].xyz);
+            }
+        if (dist > 0.0) {
+            value += radius / dist;
+        }
+        
+    }
+    }
+
+    // Approximate the partial derivatives using finite differences
+    float dx = 0.0, dy = 0.0, dz = 0.0;
+
+    for (int i = 0; i < metaballcount; i++) {
+        if (ObjectID[i] == ID){
+        vec3 center = ObjectsMeshes[i].xyz;
+        float radius = ObjectsMeshes[i].w;
+
+        dx += (radius / distance(point + vec3(eps, 0.0, 0.0), center)) - (radius / distance(point - vec3(eps, 0.0, 0.0), center));
+        dy += (radius / distance(point + vec3(0.0, eps, 0.0), center)) - (radius / distance(point - vec3(0.0, eps, 0.0), center));
+        dz += (radius / distance(point + vec3(0.0, 0.0, eps), center)) - (radius / distance(point - vec3(0.0, 0.0, eps), center));
+        }
+    }
+    vec3 center = ObjectsMeshes[closestIndex].xyz;
+    float radius = ObjectsMeshes[closestIndex].w;
     dx = (radius / distance(point + vec3(eps, 0.0, 0.0), center)) - (radius / distance(point - vec3(eps, 0.0, 0.0), center));
     dy = (radius / distance(point + vec3(0.0, eps, 0.0), center)) - (radius / distance(point - vec3(0.0, eps, 0.0), center));
     dz = (radius / distance(point + vec3(0.0, 0.0, eps), center)) - (radius / distance(point - vec3(0.0, 0.0, eps), center));
@@ -213,6 +272,57 @@ void main() {
             ray_dir = -normal;
             //ray_dir.y = -(ray_dir.y);
             //break;w
+        }
+        bool Collision = false;
+        for (int i=0;i<ObjectCount;i++){
+            
+            float CurrentObjectID = ObjectIDList[i];
+            int CurrentObjectMetaballCount = 0;
+            float TotalDistance = 0;
+            for (int j = 0;j < ObjectMeshCount;j++){
+                
+                if (ObjectID[j] == CurrentObjectID){
+
+
+                    
+                    //for (int i = 0; i < metaballcount; i++) {
+                    vec3 center = ObjectsMeshes[j].xyz;
+                    float radius = ObjectsMeshes[j].w;
+                    if (distance(current_pos,center) > 0){
+                    TotalDistance += radius/(distance(current_pos,center));
+                    }
+                    if (distance(current_pos, center) <= radius) {
+                        //return true;
+                     }
+
+                }
+             if (TotalDistance > 2){
+                    //return true;
+                    hit = true;
+                    normal = calculateObjectNormal(current_pos,CurrentObjectID);
+                    vec3 I = (ray_dir/normalize(ray_dir));
+                    vec3 N = (normal/normalize(normal));
+                    //ray_dir = I - 2 * dot(I,N) * N;
+                    ray_dir = -normal;
+                    //light_color = vec3(1,0,0);
+                    //light_color = abs(normal);
+                    //b = 0;
+                    //b = 0;
+                    Collision = true;
+                    break;
+
+                    }
+                     //}
+            }
+        if (Collision == true){
+            break;
+
+        }
+
+        }
+        if (Collision == true){
+            //break;
+
         }
     }
 
