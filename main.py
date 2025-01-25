@@ -96,7 +96,7 @@ for fragment_shader_file_path in ["Fragment-Shader.c","_internals/Fragment-Shade
             FRAGMENT_SHADER = file.read()
             break
     except FileNotFoundError as e:
-        print(e)
+        print(e) 
         continue
 
 
@@ -173,6 +173,10 @@ def main():
     metaball_location = glGetUniformLocation(shader, "metaballs")
     metaball_count_location = glGetUniformLocation(shader, "metaballcount")
 
+    portal_location = glGetUniformLocation(shader, "Portals")
+    portal_count_location = glGetUniformLocation(shader, "PortalCount")
+    other_portal_location = glGetUniformLocation(shader, "OtherPortalIndex")
+
     lights_location = glGetUniformLocation(shader, "light_positions")
     lights_color_location = glGetUniformLocation(shader, "light_colors")
     lights_amount_location = glGetUniformLocation(shader, "light_count")
@@ -195,8 +199,11 @@ def main():
         [2, 0.0, -5.0, 1.0],  # Sphere 2: center (2,0,-5), radius 1
     ], dtype=np.float32)
 
-    light_positions = np.array([[3.0,2.0,-5.0],[5.0,2.0,-5.0]], dtype=np.float32)
-    lights_colors = np.array([[0.0,1.0,0.0],[0.0,0.0,1.0]], dtype=np.float32)
+    portal_data = np.array([[0,3,-7,2.0],[0,3,-2,2.0]])
+    other_portal_data = np.array([[1,0]])
+
+    light_positions = np.array([[3.0,2.0,-5.0],[5.0,2.0,-5.0],[0.0,2.0,-5.0]], dtype=np.float32)
+    lights_colors = np.array([[0.0,1.0,0.0],[0.0,0.0,1.0],[1.0,1.0,1.0]], dtype=np.float32)
 
     ObjectMeshes = np.array([[0.0, 0.0, -3.0, 1.0],[2, 0.0, -3.0, 1.0]], dtype=np.float32)
     ObjectIDList = np.array([0], dtype=np.float32)
@@ -316,6 +323,11 @@ def main():
             glUniform3fv(lights_location, len(light_positions),light_positions.flatten())
             glUniform3fv(lights_color_location, len(light_positions),lights_colors.flatten())
             glUniform4fv(metaball_location, len(sphere_data), sphere_data.flatten())
+
+
+            glUniform1i(portal_count_location, len(portal_data))
+            glUniform4fv(portal_location, len(portal_data), portal_data.flatten())
+            glUniform1iv(other_portal_location, len(portal_data), other_portal_data.flatten())
 
             glUniform4fv(object_meshes_location, len(ObjectMeshes), ObjectMeshes.flatten())
             glUniform1fv(object_id_location, len(ObjectIDS), ObjectIDS.flatten())

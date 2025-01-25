@@ -68,6 +68,10 @@ uniform float ObjectIDList[64];
 uniform int ObjectCount;
 uniform int ObjectMeshCount;
 
+uniform vec4 Portals[16];
+uniform int PortalCount = 0;
+uniform int OtherPortalIndex[16];
+
 uniform float time;
 
 bool isObjectAt(vec3 point) {
@@ -91,6 +95,86 @@ bool isObjectAt(vec3 point) {
     }
     return false;
     
+}
+
+
+bool CollidingWithPortal(vec3 point){
+    for (int i = 0; i < PortalCount;i++){
+        vec4 portal = Portals[i];
+        vec3 center = portal.xyz;
+        float radius = portal.w;
+        if ((center-point).z > 0){
+            return false;
+        }
+
+        //if ((center-point).z < -0.1){
+        //    return false;
+       // }
+        //return true;
+        if (distance(point, center) <= radius){
+        if (distance(point, center) <= radius-0.2){
+            return false;
+        }
+        //vec4 OtherPortal = Portals[OtherPortalIndex[i]];
+        //vec3 PortalOffset = portal.xyz - OtherPortal.xyz;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CollidingWithPortalFrame(vec3 point){
+    for (int i = 0; i < PortalCount;i++){
+        vec4 portal = Portals[i];
+        vec3 center = portal.xyz;
+        float radius = portal.w;
+        if ((center-point).z > 0.1){
+            return false;
+        }
+        if ((center-point).z < -0.1){
+            return false;
+        }
+        if (distance(point, center) <= radius+0.2){
+        if (distance(point, center) <= radius-0.2){
+            return false;
+        }
+        //vec4 OtherPortal = Portals[OtherPortalIndex[i]];
+        //vec3 PortalOffset = portal.xyz - OtherPortal.xyz;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+vec3 GetPortalRayOffset(vec3 point){
+    for (int i = 0; i < PortalCount;i++){
+        vec4 portal = Portals[i];
+        vec3 center = portal.xyz;
+        float radius = portal.w;
+        if ((center-point).z > 0){
+            return vec3(0.0,0.0,0.0);
+        }
+        if (distance(point, center) <= radius){
+        if (distance(point, center) <= radius-0.2){
+            return vec3(0.0,0.0,0.0);
+        }
+        vec4 OtherPortal = Portals[OtherPortalIndex[i]];
+        //vec3 PortalOffset = portal.xyz - OtherPortal.xyz;
+        vec3 PortalOffset = OtherPortal.xyz - portal.xyz;
+        
+            
+            return PortalOffset;
+
+
+        }
+
+    }
+    return vec3(0.0,0.0,0.0);
+
+
+
 }
 
 vec3 calculateNormal(vec3 point) {
@@ -222,6 +306,8 @@ void main() {
    // ray_dir = vec3((sin(Cam_XAngle)*uv.x)-(cos(Cam_XAngle)*uv.z),uv.y,(cos(Cam_XAngle)*uv.x)+(sin(Cam_XAngle)*uv.z));
     ray_dir = normalize(ray_dir);
 
+    bool insidePortal = false;
+
     float max_distance = 50.0;
     float step_size = 0.1;
     vec3 current_pos = ray_origin;
@@ -230,6 +316,8 @@ void main() {
     float b = 0;
     vec3 light_color = vec3(0,0,0);
     vec3 normal = vec3(0,1,0);
+    vec3 color_filter = vec3(1,1,1);
+    float portal_distortion_multiplier = 1;
     for (float t = 0.0; t < max_distance; t += step_size) {
         current_pos += ray_dir * step_size;
         b += 1/(max_distance+step_size);
@@ -255,6 +343,41 @@ void main() {
             //b = 0;
             //break;
 
+
+        }
+
+
+        if (CollidingWithPortalFrame(current_pos)){
+            hit = true;
+            light_color = vec3(255,154,0)/255;
+            b = 0;
+            break;
+
+
+        }
+        if (CollidingWithPortal(current_pos)){
+            //break;
+            //hit = true;
+            //b = 1;
+            //b = 0;
+            
+            if (insidePortal == false){
+            //ray_dir.x += distance(randomGradient(uv+(1/time)),vec2(0,0))*portal_distortion_multiplier;
+            //portal_distortion_multiplier = -portal_distortion_multiplier;
+            //color_filter = color_filter*(vec3(255,154,0)/255);
+            current_pos = current_pos + GetPortalRayOffset(current_pos);
+            //ray_dir = ray_dir * vec3(1,1,-1);
+            //ray_dir.z = -abs(ray_dir.z);
+            }
+            //current_pos = current_pos + GetPortalRayOffset(current_pos);
+            insidePortal = true;
+            //light_color = vec3(0,0,1);
+            //break;
+
+
+        }
+        else {
+        insidePortal = false;
 
         }
         if (isObjectAt(current_pos)) {
@@ -332,7 +455,7 @@ void main() {
             //b = b*2;
 
         }
-        fragColor = vec4(b*light_color, 1.0); // Red for hit
+        fragColor = vec4(b*light_color*color_filter, 1.0); // Red for hit
         //fragColor = vec4(1, 0.0, 0.0, 1.0); // Red for hit
         //fragColor = vec4(abs(ray_dir),1.0);
     } else {
