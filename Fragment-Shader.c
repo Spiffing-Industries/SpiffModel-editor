@@ -309,6 +309,7 @@ void main() {
     bool insidePortal = false;
 
     float max_distance = 50.0;
+    max_distance = 10.0;
     float step_size = 0.1;
     vec3 current_pos = ray_origin;
     bool hit = false;

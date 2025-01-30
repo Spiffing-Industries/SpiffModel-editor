@@ -5,10 +5,15 @@ from OpenGL.GL.shaders import compileProgram, compileShader
 import numpy as np
 import math
 import time
+import os
+os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 # Window dimensions
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 
+
+WINDOW_WIDTH = 400
+WINDOW_HEIGHT = 300
 #WINDOW_WIDTH = 1920
 #WINDOW_HEIGHT = 1080
 # Vertex shader (passes through vertex positions)
@@ -243,7 +248,10 @@ def main():
         pygame.event.set_grab(MouseGrabbed)
         #if MouseGrabbed:
             #pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
+        #print(MouseGrabbed)
         mouse_x, mouse_y = pygame.mouse.get_pos()
+        key_mouse_dx,key_mouse_dy = 0,0
+        arrows_pressed = [False,False,False,False]
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
@@ -257,7 +265,7 @@ def main():
                  #   pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
         if MouseGrabbed:
             pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
-
+        #pygame.mouse.set_pos((0,0))
         # Get mouse movement
         
         #print(mouse_x,mouse_y)
@@ -274,6 +282,8 @@ def main():
         sensitivity = 0.002
 
         # Update yaw and pitch
+        mouse_dy += key_mouse_dy
+        print(key_mouse_dy)
         yaw += mouse_dx * sensitivity*-1
         pitch += mouse_dy * sensitivity
 
@@ -284,7 +294,8 @@ def main():
 
         # Movement controls
         keys = pygame.key.get_pressed()
-        print(yaw)
+        #print(yaw)
+        #print(keys[])
         if keys[K_w]:
             #camera_pos += camera_dir * 0.1
             camera_pos[2]+= -math.sin(yaw)*0.1
@@ -307,6 +318,14 @@ def main():
             camera_pos[1] += 0.1
         if keys[K_z]:
             pitch += 0.1
+        if keys[K_UP]:
+            pitch -= 0.1
+        if keys[K_DOWN]:
+            pitch += 0.1
+        if keys[K_LEFT]:
+            yaw += 0.1
+        if keys[K_RIGHT]:
+            yaw -= 0.1
         camera_pos = camera_pos[:3]
         camera_dir = camera_dir[:3]
 
