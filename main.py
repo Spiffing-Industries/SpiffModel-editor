@@ -3,6 +3,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
 import numpy as np
+from PIL import Image
 import math
 import time
 import os
@@ -134,6 +135,49 @@ def rotate_camera(camera_dir, yaw, pitch):
 
     return rotated_dir
 
+def load_3d_texture(folder_path):
+    """
+    Loads a 3D texture from a folder of images.
+
+    :param folder_path: Path to the folder containing images.
+    :return: OpenGL texture ID
+    """
+    # Get sorted list of image files
+    image_files = sorted([f for f in os.listdir(folder_path) if f.endswith(('.png', '.jpg', '.jpeg'))])
+    
+    if not image_files:
+        raise ValueError("No images found in the specified folder.")
+
+    # Load images
+    slices = []
+    for filename in image_files:
+        img_path = os.path.join(folder_path, filename)
+        img = Image.open(img_path).convert("RGB")  # Ensure 3 channels (RGB)
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)  # Flip vertically for OpenGL
+        slices.append(np.array(img, dtype=np.uint8))
+
+    # Convert list to 3D NumPy array
+    data = np.stack(slices, axis=0)  # Shape: (depth, height, width, 3)
+    depth, height, width, channels = data.shape
+
+    # Generate OpenGL texture
+    textureID = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_3D, textureID)
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data)
+
+    # Set texture parameters
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
+
+    glBindTexture(GL_TEXTURE_3D, 0)  # Unbind
+
+    return textureID
+
+
+
 def main():
     pygame.init()
     print("OpenGL Major Version",pygame.display.gl_get_attribute(pygame.GL_CONTEXT_MAJOR_VERSION))
@@ -166,6 +210,19 @@ def main():
     glBindVertexArray(VAO)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
     glEnableVertexAttribArray(0)
+
+    #texture = glGenTextures(1)
+    #Texdepth = 16
+    #Texwidth, Texheight = 16, 16
+    #data = np.random.rand(16, 16, 16, 3).astype(np.float32)  # Random RGB values
+
+    #print(data)
+
+    textureID = load_3d_texture("images")
+    #glBindTexture(GL_TEXTURE_3D, textureID)
+    #glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, Texwidth, Texheight, Texdepth, 0, GL_RGB, GL_FLOAT, data)
+
+
 
     # Set the shader program and uniforms
     glUseProgram(shader)
@@ -354,6 +411,10 @@ def main():
 
             glUniform1i(object_count_location, len(ObjectIDList))
             glUniform1i(object_mesh_count_location, len(ObjectIDS))
+
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_3D, textureID)
+            glUniform1i(glGetUniformLocation(shader, "texture3D"), 0)
         except Exception as e:
             print(e)
         glClear(GL_COLOR_BUFFER_BIT)

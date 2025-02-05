@@ -74,6 +74,8 @@ uniform int OtherPortalIndex[16];
 
 uniform float time;
 
+uniform sampler3D texture3D;
+
 bool isObjectAt(vec3 point) {
     //if (point.y < -2){
     //    return true;
@@ -287,6 +289,11 @@ vec3 RotateOnY(vec3 Point,float angle){
     return vec3(rotatedX,Point.y,rotatedZ);
 }
 
+float insideBox3D(vec3 v, vec3 bottomLeft, vec3 topRight) {
+    vec3 s = step(bottomLeft, v) - step(topRight, v);
+    return s.x * s.y * s.z; 
+}
+
 void main() {
     vec2 uv = gl_FragCoord.xy / resolution * 2.0 - 1.0;
     uv.y *= resolution.y / resolution.x;
@@ -446,6 +453,26 @@ void main() {
         }
         if (Collision == true){
             //break;
+
+        }
+        if (insideBox3D(current_pos,vec3(0,0,0),vec3(1,1,1))>0){
+            //
+            //light_color = current_pos;
+            //color_filter *= normalize(texture(texture3D,current_pos.xyz).rgb+vec3(1,1,1));
+            if (texture(texture3D,current_pos.xyz).xyz == vec3(0,0,0)){
+                
+                //color_filter = vec3(1,1,1);
+            }else{
+                hit = true;
+                light_color = texture(texture3D,current_pos.xyz).xyz;
+                b = 0;
+                break;
+                
+            }
+            
+            //b=0;
+            //break;
+
 
         }
     }
