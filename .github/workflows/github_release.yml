@@ -6,9 +6,6 @@ on:
   push:
     tags:
       - 'v*'
-
-
-on:
   workflow_dispatch:
     tags:
       - 'v*'
