@@ -341,12 +341,30 @@ void main() {
             }
         }
         if (current_pos.y < -2){
-            
+            if (current_pos.y > -2.2){ 
             hit=true;
             normal = vec3(0,1,0);
             vec3 I = (ray_dir/normalize(ray_dir));
             vec3 N = (normal/normalize(normal));
-            ray_dir = vec3(ray_dir.x,abs(ray_dir.y),ray_dir.z);
+            ray_dir = vec3(ray_dir.x,-(ray_dir.y),ray_dir.z);
+
+            //if (current_pos.y > -2.2){ 
+            bool onLines = false;
+            if (mod(current_pos.x,1) > 0.9){
+                onLines = true;
+
+            }
+            if (mod(current_pos.z,1) > 0.9){
+                onLines = true;
+                
+
+            }
+            if (onLines == true){
+                light_color = vec3(1.0,1.0,1.0);
+            b=0;
+            break;
+            }
+            }
             //ray_dir = I - 2 * dot(I,N) * N;
             //b = 0;
             //b = 0;
