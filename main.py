@@ -476,6 +476,12 @@ def main():
     ObjectIDS = np.array([0,0],dtype=np.float32)
 
 
+    PlayerVel = np.array([0.0,0.0,0.0])
+
+    gravity_strength = -9
+    jump_strength = 300
+
+
 
     last_mouse_x, last_mouse_y = pygame.mouse.get_pos()
 
@@ -488,7 +494,14 @@ def main():
     enable_POST = False
     enable_COMP = True
     escape_menu = False
+
+
+    FrameStart = time.time()
+    EnablePhysics = True
     while running:
+        DeltaTime = time.time()-FrameStart
+        #print(DeltaTime)
+        FrameStart = time.time()
         i += 1
         sphere_data = np.array([
             [0.0, 0.0, -5.0, 1.0],  # Sphere 1: center (0,0,-5), radius 2
@@ -529,6 +542,12 @@ def main():
                     enable_POST = not enable_POST
                 if event.key == pygame.K_c:
                     enable_COMP = not enable_COMP
+                if event.key == pygame.K_v:
+                    EnablePhysics = not EnablePhysics
+                if event.key == K_SPACE:
+                    onGround = camera_pos[1]-1 <= -2
+                    if onGround:
+                        PlayerVel[1] += jump_strength*DeltaTime
             if event.type == pygame.MOUSEMOTION:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 mouse_dx,mouse_dy = event.rel
@@ -554,7 +573,7 @@ def main():
 
         # Update yaw and pitch
         mouse_dy += key_mouse_dy
-        print(key_mouse_dy)
+        #print(key_mouse_dy)
         yaw += mouse_dx * sensitivity*-1
         pitch += mouse_dy * sensitivity
 
@@ -567,22 +586,39 @@ def main():
         keys = pygame.key.get_pressed()
         #print(yaw)
         #print(keys[])
+        accel_dir = ([0,0,0])
         if keys[K_w]:
             #camera_pos += camera_dir * 0.1
-            camera_pos[2]+= -math.sin(yaw)*0.1
-            camera_pos[0]+= math.cos(yaw)*0.1
+            if EnablePhysics:
+                accel_dir[2]+= -math.sin(yaw)*0.1
+                accel_dir[0] += math.cos(yaw)*0.1
+            else:   
+                camera_pos[2]+= -math.sin(yaw)*0.1
+                camera_pos[0]+= math.cos(yaw)*0.1
         if keys[K_s]:
-            #camera_pos -= camera_dir * 0.1
-            camera_pos[2]+= -math.sin(yaw)*-0.1
-            camera_pos[0]+= math.cos(yaw)*-0.1
+            if EnablePhysics:
+                accel_dir[2]+= -math.sin(yaw)*-0.1
+                accel_dir[0]+= math.cos(yaw)*-0.1
+            else:
+                #camera_pos -= camera_dir * 0.1
+                camera_pos[2]+= -math.sin(yaw)*-0.1
+                camera_pos[0]+= math.cos(yaw)*-0.1
             #camera_pos[2]-= 0.1
         if keys[K_a]:
+            if EnablePhysics:
             #camera_pos[0] -= 0.1
-            camera_pos[2]+= -math.sin(yaw+math.radians(90))*0.1
-            camera_pos[0]+= math.cos(yaw+math.radians(90))*0.1
+                accel_dir[2]+= -math.sin(yaw+math.radians(90))*0.1
+                accel_dir[0]+= math.cos(yaw+math.radians(90))*0.1
+            else:
+                camera_pos[2]+= -math.sin(yaw+math.radians(90))*0.1
+                camera_pos[0]+= math.cos(yaw+math.radians(90))*0.1
         if keys[K_d]:
-            camera_pos[2]+= -math.sin(yaw-math.radians(90))*0.1
-            camera_pos[0]+= math.cos(yaw-math.radians(90))*0.1
+            if EnablePhysics:
+                accel_dir[2]+= -math.sin(yaw-math.radians(90))*0.1
+                accel_dir[0]+= math.cos(yaw-math.radians(90))*0.1
+            else:
+                camera_pos[2]+= -math.sin(yaw-math.radians(90))*0.1
+                camera_pos[0]+= math.cos(yaw-math.radians(90))*0.1
         if keys[K_q]:
             camera_pos[1] -= 0.1
         if keys[K_e]:
@@ -599,6 +635,42 @@ def main():
             yaw -= 0.1
         camera_pos = camera_pos[:3]
         camera_dir = camera_dir[:3]
+
+
+        if EnablePhysics:
+
+            onGround = camera_pos[1]-1 <= -2
+            print(onGround)
+            if onGround:
+                speed = np.linalg.norm(PlayerVel)
+                friction = 5
+                if speed != 0:
+                    drop = speed*friction*DeltaTime
+                    PlayerVel *= max(speed-drop,0)/speed
+
+
+            
+            max_velocity = 10000
+
+            accelerate = 1
+
+            projVel = np.dot(PlayerVel,accel_dir)
+            accelVel = accelerate
+            if projVel+accelVel > max_velocity:
+                accelVel = max_velocity-projVel
+            PlayerVel += accel_dir*accelVel
+
+
+            PlayerVel[1] += gravity_strength*DeltaTime
+            #camera_pos[1] += PlayerVel[1]*DeltaTime
+            camera_pos += PlayerVel*DeltaTime
+            print(projVel)
+
+            
+            if camera_pos[1]-1 < -2:
+                camera_pos[1] = -1
+                if PlayerVel[1] < 0:
+                    PlayerVel[1] = 0
 
 
 
@@ -757,7 +829,7 @@ def main():
             
             #"""
             ##Post Enmd
-        print(enable_COMP)
+        #print(enable_COMP)
         if enable_COMP:
 
             
