@@ -142,6 +142,9 @@ COMP_Fragment = load_shader_file("COMP-Fragment.c")
 SKY_Vertex = load_shader_file("SKY-Vertex.c")
 SKY_Fragment = load_shader_file("SKY-Fragment.c")
 
+PAUSE_Vertex = load_shader_file("PAUSE-Vertex.c")
+PAUSE_Fragment = load_shader_file("PAUSE-Fragment.c")
+
 
 def create_shader_program():
     return compileProgram(
@@ -254,6 +257,8 @@ def main():
 
     sky_shader = create_new_shader_program(SKY_Vertex,SKY_Fragment)
 
+    pause_shader = create_new_shader_program(PAUSE_Vertex,PAUSE_Fragment)
+
     # Create FBO
     fbo = glGenFramebuffers(1)
     glBindFramebuffer(GL_FRAMEBUFFER, fbo)
@@ -314,7 +319,32 @@ def main():
 
 
 
+    # Create Pause FBO
+    pause_buffer = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, pause_buffer)
 
+    # Create texture to render to
+    pause_render_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, pause_render_texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the texture to the FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, pause_render_texture, 0)
+
+    # (Optional) Create a renderbuffer for depth if needed
+    #rbo = glGenRenderbuffers(1)
+    #glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+    #glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT)
+    #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+
+    # Check for completeness
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        print("ERROR: Framebuffer is not complete!")
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
 
 
@@ -456,7 +486,8 @@ def main():
     pitch = 0
 
     enable_POST = False
-    enable_COMP = False
+    enable_COMP = True
+    escape_menu = False
     while running:
         i += 1
         sphere_data = np.array([
@@ -490,6 +521,8 @@ def main():
             if event.type == QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    escape_menu = not escape_menu
                 if event.key == pygame.K_ESCAPE:
                     MouseGrabbed = not MouseGrabbed
                 if event.key == pygame.K_p:
@@ -644,6 +677,27 @@ def main():
         #"""
 
 
+        #Pause Code
+        #"""
+        #
+
+        glClear(GL_COLOR_BUFFER_BIT)
+        glBindFramebuffer(GL_FRAMEBUFFER, pause_buffer)
+        glUseProgram(pause_shader)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, pause_render_texture)
+
+        glUniform1i(glGetUniformLocation(pause_shader, "Enabled"), escape_menu)
+
+        #glUniform3f(glGetUniformLocation(sky_shader, "camera_dir"), *camera_dir)
+
+
+        glBindVertexArray(VAO)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        #"""
+
         #UI code
 
         
@@ -724,12 +778,17 @@ def main():
             glUniform1i(glGetUniformLocation(comp_shader, "uiTexture"), 1)
             glUniform1i(glGetUniformLocation(comp_shader, "skyTexture"), 2)
 
+            glUniform1i(glGetUniformLocation(comp_shader, "pauseTexture"), 3)
+
             glActiveTexture(GL_TEXTURE0+0)
             glBindTexture(GL_TEXTURE_2D, render_texture)
             glActiveTexture(GL_TEXTURE0+1)
             glBindTexture(GL_TEXTURE_2D, ui_render_texture)
             glActiveTexture(GL_TEXTURE0+2)
             glBindTexture(GL_TEXTURE_2D, sky_render_texture)
+            glActiveTexture(GL_TEXTURE0+3)
+            glBindTexture(GL_TEXTURE_2D, pause_render_texture)
+            
             
             
             
