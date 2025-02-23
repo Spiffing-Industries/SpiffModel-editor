@@ -6,12 +6,12 @@ uniform sampler2D screenTexture;
 void main()
 {
     vec2 tex_offset = 1.0 / textureSize(screenTexture, 0); // size of one texel
-    vec3 result = texture(screenTexture, TexCoords).rgb * 0.227027;
-    result += texture(screenTexture, TexCoords + vec2(tex_offset.x, 0.0)).rgb * 0.1945946;
-    result += texture(screenTexture, TexCoords - vec2(tex_offset.x, 0.0)).rgb * 0.1945946;
-    result += texture(screenTexture, TexCoords + vec2(0.0, tex_offset.y)).rgb * 0.1945946;
-    result += texture(screenTexture, TexCoords - vec2(0.0, tex_offset.y)).rgb * 0.1945946;
-    fragColor = vec4(result, 1.0);
+    vec4 result = texture(screenTexture, TexCoords).rgba * 0.227027;
+    result += texture(screenTexture, TexCoords + vec2(tex_offset.x, 0.0)).rgba * 0.1945946;
+    result += texture(screenTexture, TexCoords - vec2(tex_offset.x, 0.0)).rgba * 0.1945946;
+    result += texture(screenTexture, TexCoords + vec2(0.0, tex_offset.y)).rgba * 0.1945946;
+    result += texture(screenTexture, TexCoords - vec2(0.0, tex_offset.y)).rgba * 0.1945946;
+    fragColor = vec4(result);
 
 
     //fragColor = (texture(screenTexture, TexCoords));

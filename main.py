@@ -139,6 +139,9 @@ UI_Fragment = load_shader_file("UI-Fragment.c")
 COMP_Vertex = load_shader_file("COMP-Vertex.c")
 COMP_Fragment = load_shader_file("COMP-Fragment.c")
 
+SKY_Vertex = load_shader_file("SKY-Vertex.c")
+SKY_Fragment = load_shader_file("SKY-Fragment.c")
+
 
 def create_shader_program():
     return compileProgram(
@@ -249,6 +252,8 @@ def main():
     
     comp_shader = create_new_shader_program(COMP_Vertex,COMP_Fragment)
 
+    sky_shader = create_new_shader_program(SKY_Vertex,SKY_Fragment)
+
     # Create FBO
     fbo = glGenFramebuffers(1)
     glBindFramebuffer(GL_FRAMEBUFFER, fbo)
@@ -275,6 +280,40 @@ def main():
     if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
         print("ERROR: Framebuffer is not complete!")
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
+
+
+    # Create Sky FBO
+    sky_buffer = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, sky_buffer)
+
+    # Create texture to render to
+    sky_render_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, sky_render_texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the texture to the FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, sky_render_texture, 0)
+
+    # (Optional) Create a renderbuffer for depth if needed
+    #rbo = glGenRenderbuffers(1)
+    #glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+    #glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT)
+    #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+
+    # Check for completeness
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        print("ERROR: Framebuffer is not complete!")
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
 
 
 
@@ -585,12 +624,32 @@ def main():
 
 
 
+        #Sky Code
+        #"""
+        #
+
+        glClear(GL_COLOR_BUFFER_BIT)
+        glBindFramebuffer(GL_FRAMEBUFFER, sky_buffer)
+        glUseProgram(sky_shader)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, sky_render_texture)
+
+        glUniform3f(glGetUniformLocation(sky_shader, "camera_dir"), *camera_dir)
+
+
+        glBindVertexArray(VAO)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        #"""
+
 
         #UI code
 
-        glBindFramebuffer(GL_FRAMEBUFFER, ui_buffer)
+        
         
         glClear(GL_COLOR_BUFFER_BIT)
+        glBindFramebuffer(GL_FRAMEBUFFER, ui_buffer)
         glUseProgram(ui_shader)
 
 
@@ -607,6 +666,12 @@ def main():
         
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
+
+        
+
 
         #glBindFramebuffer(GL_FRAMEBUFFER, 1)
 
@@ -625,9 +690,6 @@ def main():
 
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, render_texture)
-
-            
-            
             
             glUniform1i(glGetUniformLocation(blur_shader, "screenTexture"), 0)
 
@@ -660,11 +722,14 @@ def main():
     
 
             glUniform1i(glGetUniformLocation(comp_shader, "uiTexture"), 1)
+            glUniform1i(glGetUniformLocation(comp_shader, "skyTexture"), 2)
 
             glActiveTexture(GL_TEXTURE0+0)
             glBindTexture(GL_TEXTURE_2D, render_texture)
             glActiveTexture(GL_TEXTURE0+1)
             glBindTexture(GL_TEXTURE_2D, ui_render_texture)
+            glActiveTexture(GL_TEXTURE0+2)
+            glBindTexture(GL_TEXTURE_2D, sky_render_texture)
             
             
             

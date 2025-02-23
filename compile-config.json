@@ -1,0 +1,105 @@
+{
+ "version": "auto-py-to-exe-configuration_v1",
+ "pyinstallerOptions": [
+  {
+   "optionDest": "noconfirm",
+   "value": true
+  },
+  {
+   "optionDest": "filenames",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/main.py"
+  },
+  {
+   "optionDest": "onefile",
+   "value": false
+  },
+  {
+   "optionDest": "console",
+   "value": true
+  },
+  {
+   "optionDest": "clean_build",
+   "value": false
+  },
+  {
+   "optionDest": "strip",
+   "value": false
+  },
+  {
+   "optionDest": "noupx",
+   "value": false
+  },
+  {
+   "optionDest": "disable_windowed_traceback",
+   "value": false
+  },
+  {
+   "optionDest": "uac_admin",
+   "value": false
+  },
+  {
+   "optionDest": "uac_uiaccess",
+   "value": false
+  },
+  {
+   "optionDest": "argv_emulation",
+   "value": false
+  },
+  {
+   "optionDest": "bootloader_ignore_signals",
+   "value": false
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/Post-Fragment.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/Fragment-Shader.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/Post-Vertex.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/images;images/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/COMP-Fragment.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/COMP-Vertex.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/UI-Fragment.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/UI-Vertex.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/Post-Fragment.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/Post-Vertex.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/SKY-Fragment.c;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Downloads/PyPortal-main (2)/PyPortal-main/SKY-Vertex.c;."
+  }
+ ],
+ "nonPyinstallerOptions": {
+  "increaseRecursionLimit": true,
+  "manualArguments": ""
+ }
+}

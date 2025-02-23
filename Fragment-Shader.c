@@ -493,6 +493,8 @@ void main() {
         float noiseValue = perlinNoise(uv);
         fragColor = vec4(0.0, 0.0, 1.0, 1.0); // Blue for miss
         fragColor = vec4(vec3(noiseValue * 0.5 + 0.5), 1.0);
+
+        fragColor = vec4(0,0,0,0);
     }
     normalColor = vec4(abs(ray_dir),1.0);
 }

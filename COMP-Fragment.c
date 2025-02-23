@@ -3,6 +3,7 @@ in vec2 TexCoords;
 out vec4 fragColor;
 uniform sampler2D screenTexture;
 uniform sampler2D uiTexture;
+uniform sampler2D skyTexture;
 
 void main()
 {
@@ -17,8 +18,22 @@ void main()
 
     float UI_alpha =  (texture(uiTexture, TexCoords)).a;
 
+    vec4 worldColor = texture(screenTexture, TexCoords);
+
+    vec4 skyColor = texture(skyTexture, TexCoords);
 
 
-    fragColor = ((texture(screenTexture, TexCoords))*(1-UI_alpha))+ (texture(uiTexture, TexCoords));
+    vec4 WorldAndSkyColor = (skyColor*(1-worldColor.a))+(worldColor*worldColor.a);
+    if (worldColor.a == 0){
+        worldColor = texture(skyTexture, TexCoords);
+        //worldColor.g = 1;
+        //worldColor = skyTexture;
+    }
+    //worldColor = texture(skyTexture, TexCoords);
+    fragColor = (WorldAndSkyColor*(1-UI_alpha))+ (texture(uiTexture, TexCoords));
+    //fragColor = texture(skyTexture, TexCoords);
+
+
+
 
 }

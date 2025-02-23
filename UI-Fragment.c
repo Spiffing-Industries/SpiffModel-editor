@@ -8,8 +8,10 @@ void main()
     fragColor = vec4(0,0,0,0);
     if (TexCoords.y > 0.5) {
         fragColor = vec4(1.0,0.0,0.0,1.0);
+        fragColor.a = 0;
 
     }
+    fragColor = vec4(0,0,0,0);
 
 
     //fragColor = (texture(screenTexture, TexCoords));
