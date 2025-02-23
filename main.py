@@ -30,18 +30,14 @@ void main() {
 FRAGMENT_SHADER = """
 #version 330 core
 out vec4 fragColor;
-
 uniform vec2 resolution;
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
-
 uniform vec4 metaballs[10];
 uniform int metaballcount;
-
 bool isObjectAt(vec3 point) {
     if (point.y < -2){
         return true;
-
     }
     float TotalDistance = 0;
     for (int i = 0; i < metaballcount; i++) {
@@ -58,20 +54,17 @@ bool isObjectAt(vec3 point) {
     }
     }
     return false;
-    
-}
 
+}
 void main() {
     vec2 uv = gl_FragCoord.xy / resolution * 2.0 - 1.0;
     uv.y *= resolution.y / resolution.x;
-
     vec3 ray_origin = camera_pos;
     vec3 ray_dir = normalize(vec3(uv.x, uv.y, -1.0)); // Ray direction in view space
     //ray_dir = vec3();
     float Cam_XAngle = camera_dir.x;
     ray_dir = vec3((sin(Cam_XAngle)*uv.x)-(cos(Cam_XAngle)*uv.z),uv.y,(cos(Cam_XAngle)*uv.x)+(sin(Cam_XAngle)*uv.z));
     ray_dir = normalize(ray_dir);
-
     float max_distance = 100.0;
     float step_size = 0.1;
     vec3 current_pos = ray_origin;
@@ -85,7 +78,6 @@ void main() {
             break;
         }
     }
-
     if (hit) {
         fragColor = vec4(1-b, 0.0, 0.0, 1.0); // Red for hit
     } else {
@@ -96,7 +88,7 @@ void main() {
 
 
 
-for fragment_shader_file_path in ["Fragment-Shader.c","_internals/Fragment-Shader.c"]:
+for fragment_shader_file_path in ["Fragment-Shader.c","_internals/Fragment-Shader.c","_internal/Fragment-Shader.c"]:
     try:
         with open(fragment_shader_file_path) as file:
             FRAGMENT_SHADER = file.read()
@@ -106,12 +98,64 @@ for fragment_shader_file_path in ["Fragment-Shader.c","_internals/Fragment-Shade
         continue
 
 
+for post_fragment_shader_file_path in ["Post-Fragment.c","_internals/Post-Fragment.c","_internal/Post-Fragment.c"]:
+    try:
+        with open(post_fragment_shader_file_path) as file:
+            POST_FRAGMENT_SHADER = file.read()
+            break
+    except FileNotFoundError as e:
+        print(e) 
+        continue
+
+
+for post_vertex_shader_file_path in ["Post-Vertex.c","_internals/Post-Vertex.c","_internal/Post-Vertex.c"]:
+    try:
+        with open(post_vertex_shader_file_path) as file:
+            POST_VERTEX_SHADER = file.read()
+            break
+    except FileNotFoundError as e:
+        print(e) 
+        continue
+
+
+def load_shader_file(name):
+    shader = ""
+    for shader_file_path in [f"{name}",f"_internals/{name}",f"_internal/{name}"]:
+        try:
+            with open(shader_file_path) as file:
+                shader = file.read()
+                break
+        except FileNotFoundError as e:
+            print(e) 
+            continue
+    return shader
+
+
+
+UI_Vertex = load_shader_file("UI-Vertex.c")
+UI_Fragment = load_shader_file("UI-Fragment.c")
+
+
+COMP_Vertex = load_shader_file("COMP-Vertex.c")
+COMP_Fragment = load_shader_file("COMP-Fragment.c")
 
 
 def create_shader_program():
     return compileProgram(
         compileShader(VERTEX_SHADER, GL_VERTEX_SHADER),
         compileShader(FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
+    )
+
+def create_post_shader_program():
+    return compileProgram(
+        compileShader(POST_VERTEX_SHADER, GL_VERTEX_SHADER),
+        compileShader(POST_FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
+    )
+
+def create_new_shader_program(vertex_shader,fragment_shader):
+    return compileProgram(
+        compileShader(vertex_shader, GL_VERTEX_SHADER),
+        compileShader(fragment_shader, GL_FRAGMENT_SHADER)
     )
 
 def rotate_camera(camera_dir, yaw, pitch):
@@ -178,6 +222,8 @@ def load_3d_texture(folder_path):
 
 
 
+
+
 def main():
     pygame.init()
     print("OpenGL Major Version",pygame.display.gl_get_attribute(pygame.GL_CONTEXT_MAJOR_VERSION))
@@ -193,6 +239,87 @@ def main():
     # Create a shader program
     shader = create_shader_program()
 
+
+    
+    blur_shader = create_post_shader_program()
+
+
+    ui_shader = create_new_shader_program(UI_Vertex,UI_Fragment)
+
+    
+    comp_shader = create_new_shader_program(COMP_Vertex,COMP_Fragment)
+
+    # Create FBO
+    fbo = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+
+    # Create texture to render to
+    render_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, render_texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the texture to the FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, render_texture, 0)
+
+    # (Optional) Create a renderbuffer for depth if needed
+    rbo = glGenRenderbuffers(1)
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT)
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+
+    # Check for completeness
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        print("ERROR: Framebuffer is not complete!")
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
+
+
+
+    # Create FBO
+    ui_buffer = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, ui_buffer)
+
+    # Create texture to render to
+    ui_render_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, ui_render_texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the texture to the FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, ui_render_texture, 0)
+
+    # (Optional) Create a renderbuffer for depth if needed
+    #rbo = glGenRenderbuffers(1)
+    #glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+    #glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT)
+    #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+
+    # Check for completeness
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        print("ERROR: Framebuffer is not complete!")
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
+
+
+
+
+
+
+    
+
+
+    
     # Define a fullscreen quad
     quad_vertices = np.array([
         -1.0, -1.0, 0.0,
@@ -211,6 +338,9 @@ def main():
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
     glEnableVertexAttribArray(0)
 
+    #glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * quad_vertices.itemsize, ctypes.c_void_p(3 * quad_vertices.itemsize))
+    #glEnableVertexAttribArray(1)
+
     #texture = glGenTextures(1)
     #Texdepth = 16
     #Texwidth, Texheight = 16, 16
@@ -218,7 +348,12 @@ def main():
 
     #print(data)
 
-    textureID = load_3d_texture("images")
+    
+    try:
+        textureID = load_3d_texture("images")
+    except Exception as e:
+        print(e)
+        textureID = load_3d_texture("_internal/images")
     #glBindTexture(GL_TEXTURE_3D, textureID)
     #glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, Texwidth, Texheight, Texdepth, 0, GL_RGB, GL_FLOAT, data)
 
@@ -280,6 +415,9 @@ def main():
     MouseGrabbed = False
     yaw = 0
     pitch = 0
+
+    enable_POST = False
+    enable_COMP = False
     while running:
         i += 1
         sphere_data = np.array([
@@ -315,6 +453,10 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     MouseGrabbed = not MouseGrabbed
+                if event.key == pygame.K_p:
+                    enable_POST = not enable_POST
+                if event.key == pygame.K_c:
+                    enable_COMP = not enable_COMP
             if event.type == pygame.MOUSEMOTION:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 mouse_dx,mouse_dy = event.rel
@@ -386,6 +528,21 @@ def main():
         camera_pos = camera_pos[:3]
         camera_dir = camera_dir[:3]
 
+
+
+        
+
+
+        # First pass: render scene to FBO
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # Use your existing shader for raytracing and render the fullscreen quad
+        glUseProgram(shader)
+
+        
+
         #print(sphere_data)
         glUniform1f(time_location, time.time())
         try:
@@ -417,8 +574,101 @@ def main():
             glUniform1i(glGetUniformLocation(shader, "texture3D"), 0)
         except Exception as e:
             print(e)
-        glClear(GL_COLOR_BUFFER_BIT)
 
+
+        glBindVertexArray(VAO)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+        
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
+
+        #UI code
+
+        glBindFramebuffer(GL_FRAMEBUFFER, ui_buffer)
+        
+        glClear(GL_COLOR_BUFFER_BIT)
+        glUseProgram(ui_shader)
+
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, ui_render_texture)
+            
+        glUniform1i(glGetUniformLocation(ui_shader, "screenTexture"), 0)
+
+
+
+        glBindVertexArray(VAO)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+        
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+        #glBindFramebuffer(GL_FRAMEBUFFER, 1)
+
+        if enable_POST:
+            #"""
+            #glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+            
+            glClear(GL_COLOR_BUFFER_BIT)
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+            ##Post Start
+
+            
+
+            glUseProgram(blur_shader)
+            
+
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, render_texture)
+
+            
+            
+            
+            glUniform1i(glGetUniformLocation(blur_shader, "screenTexture"), 0)
+
+
+
+            glBindVertexArray(VAO)
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+        
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            
+            #"""
+            ##Post Enmd
+        print(enable_COMP)
+        if enable_COMP:
+
+            
+            #glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+            
+            glClear(GL_COLOR_BUFFER_BIT)
+
+            ##Post Start
+
+            
+
+            glUseProgram(comp_shader)
+
+            glUniform1i(glGetUniformLocation(comp_shader, "screenTexture"), 0)
+            #
+    
+
+            glUniform1i(glGetUniformLocation(comp_shader, "uiTexture"), 1)
+
+            glActiveTexture(GL_TEXTURE0+0)
+            glBindTexture(GL_TEXTURE_2D, render_texture)
+            glActiveTexture(GL_TEXTURE0+1)
+            glBindTexture(GL_TEXTURE_2D, ui_render_texture)
+            
+            
+            
+        
         # Draw the fullscreen quad
         glBindVertexArray(VAO)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)

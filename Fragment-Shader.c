@@ -6,6 +6,7 @@
 precision mediump float;
 #endif
 out vec4 fragColor;
+out vec4 normalColor;
 
 // Function to create a pseudo-random gradient vector
 vec2 randomGradient(vec2 coord) {
@@ -493,4 +494,5 @@ void main() {
         fragColor = vec4(0.0, 0.0, 1.0, 1.0); // Blue for miss
         fragColor = vec4(vec3(noiseValue * 0.5 + 0.5), 1.0);
     }
+    normalColor = vec4(abs(ray_dir),1.0);
 }
