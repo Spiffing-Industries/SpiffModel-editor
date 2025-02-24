@@ -476,10 +476,10 @@ def main():
     ObjectIDS = np.array([0,0],dtype=np.float32)
 
 
-    PlayerVel = np.array([0.0,0.0,0.0])
+    PlayerVel = np.array([0.0,0.0,0.0],dtype=np.float32)
 
     gravity_strength = -9
-    jump_strength = 22+9
+    jump_strength = 400+9
 
 
 
@@ -589,7 +589,7 @@ def main():
         keys = pygame.key.get_pressed()
         #print(yaw)
         #print(keys[])
-        accel_dir = ([0,0,0])
+        accel_dir = ([0.0,0.0,0.0])
         if keys[K_w]:
             #camera_pos += camera_dir * 0.1
             if EnablePhysics:
@@ -646,7 +646,7 @@ def main():
             #print(onGround)
             if onGround:
                 speed = np.linalg.norm(PlayerVel)
-                friction = 2
+                friction = 10
                 if speed != 0:
                     drop = speed*friction*DeltaTime
                     PlayerVel *= max(speed-drop,0)/speed
@@ -655,12 +655,14 @@ def main():
             
             max_velocity = 1000
 
-            accelerate = 1
+            accelerate = 300
+
+            accel_dir = np.array(accel_dir,dtype=np.float32)
 
 
 
             projVel = np.dot(PlayerVel,accel_dir)
-            accelVel = accelerate
+            accelVel = accelerate*DeltaTime
             if projVel+accelVel > max_velocity:
                 accelVel = max_velocity-projVel
             PlayerVel += accel_dir*accelVel
