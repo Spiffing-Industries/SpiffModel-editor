@@ -479,7 +479,7 @@ def main():
     PlayerVel = np.array([0.0,0.0,0.0])
 
     gravity_strength = -9
-    jump_strength = 300
+    jump_strength = 22+9
 
 
 
@@ -500,6 +500,9 @@ def main():
     EnablePhysics = True
     while running:
         DeltaTime = time.time()-FrameStart
+        if DeltaTime != 0:
+            print(round(1/DeltaTime))
+        
         #print(DeltaTime)
         FrameStart = time.time()
         i += 1
@@ -538,7 +541,7 @@ def main():
                     escape_menu = not escape_menu
                 if event.key == pygame.K_ESCAPE:
                     MouseGrabbed = not MouseGrabbed
-                if event.key == pygame.K_p:
+                if event.key == pygame.K_b:
                     enable_POST = not enable_POST
                 if event.key == pygame.K_c:
                     enable_COMP = not enable_COMP
@@ -640,19 +643,21 @@ def main():
         if EnablePhysics:
 
             onGround = camera_pos[1]-1 <= -2
-            print(onGround)
+            #print(onGround)
             if onGround:
                 speed = np.linalg.norm(PlayerVel)
-                friction = 5
+                friction = 2
                 if speed != 0:
                     drop = speed*friction*DeltaTime
                     PlayerVel *= max(speed-drop,0)/speed
 
 
             
-            max_velocity = 10000
+            max_velocity = 1000
 
             accelerate = 1
+
+
 
             projVel = np.dot(PlayerVel,accel_dir)
             accelVel = accelerate
@@ -664,7 +669,7 @@ def main():
             PlayerVel[1] += gravity_strength*DeltaTime
             #camera_pos[1] += PlayerVel[1]*DeltaTime
             camera_pos += PlayerVel*DeltaTime
-            print(projVel)
+            #print(projVel)
 
             
             if camera_pos[1]-1 < -2:
@@ -752,7 +757,7 @@ def main():
         #Pause Code
         #"""
         #
-
+        #glBindFramebuffer(GL_FRAMEBUFFER, pause_buffer)
         glClear(GL_COLOR_BUFFER_BIT)
         glBindFramebuffer(GL_FRAMEBUFFER, pause_buffer)
         glUseProgram(pause_shader)

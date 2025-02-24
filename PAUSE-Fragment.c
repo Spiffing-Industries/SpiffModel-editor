@@ -30,19 +30,21 @@ void main()
 
     float dx = TexCoords.x-0.5;
     float dy = TexCoords.y-0.5;
-    fragColor = vec4(TexCoords,0.0,0);
-
+    //  = vec4(TexCoords,0.0,0);
+  fragColor = vec4(0,0,0,0);
     dx = abs(dx);
     dy = abs(dy);
     float power = 9.0;
     if (Enabled == true){ 
         fragColor = vec4(0.3,0.3,0.3,1.0);
     if ((pow(dx,power)+pow(dy,power)) > pow(0.4,power)){
-
+      
         fragColor = vec4(0,0,0,0.5);
     }
 
     }
+    
+    //fragColor = vec4(TexCoords,0.0,1);
     //fragColor = (texture(screenTexture, TexCoords));
     //fragColor = vec4(gl_FragCoord.xy*vec2(400,300),0.0,1.0);
 

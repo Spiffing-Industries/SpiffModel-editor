@@ -4,6 +4,7 @@ out vec4 fragColor;
 uniform sampler2D screenTexture;
 uniform sampler2D uiTexture;
 uniform sampler2D skyTexture;
+uniform sampler2D pauseTexture;
 
 void main()
 {
@@ -31,6 +32,7 @@ void main()
     }
     //worldColor = texture(skyTexture, TexCoords);
     fragColor = (WorldAndSkyColor*(1-UI_alpha))+ (texture(uiTexture, TexCoords));
+    fragColor = (fragColor*(1-texture(pauseTexture, TexCoords).a))+texture(pauseTexture, TexCoords);
     //fragColor = texture(skyTexture, TexCoords);
 
 
