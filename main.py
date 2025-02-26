@@ -96,7 +96,7 @@ for fragment_shader_file_path in ["Fragment-Shader.c","_internals/Fragment-Shade
     except FileNotFoundError as e:
         print(e) 
         continue
-
+print(FRAGMENT_SHADER)
 
 for post_fragment_shader_file_path in ["Post-Fragment.c","_internals/Post-Fragment.c","_internal/Post-Fragment.c"]:
     try:
@@ -230,7 +230,28 @@ def load_3d_texture(folder_path):
 
 
 
-def main():
+def main(FRAGMENT_SHADER=""):
+
+
+    ##LoadConfig
+
+    config = {}
+
+    with open("config.txt") as file:
+        for line in file.read().split('\n'):
+            config[line.split(":")[0]] = line.split(":")[1]
+    FRAGMENT_SHADER
+    for config_target in config:
+        if config_target == "width":
+            WINDOW_WIDTH = int(config[config_target])
+        if config_target == "height":
+            WINDOW_HEIGHT = int(config[config_target])
+        FRAGMENT_SHADER = (config_target + "="+config[config_target] + ";").join(FRAGMENT_SHADER.split(f"//config.{config_target}"))
+        print(config_target)
+        print(FRAGMENT_SHADER)
+        
+
+    
     pygame.init()
     print("OpenGL Major Version",pygame.display.gl_get_attribute(pygame.GL_CONTEXT_MAJOR_VERSION))
     print("OpenGL Major Version",pygame.display.gl_get_attribute(pygame.GL_CONTEXT_MINOR_VERSION))
@@ -243,8 +264,8 @@ def main():
 
 
     # Create a shader program
-    shader = create_shader_program()
-
+    #shader = create_shader_program()
+    shader = create_new_shader_program(VERTEX_SHADER,FRAGMENT_SHADER)
 
     
     blur_shader = create_post_shader_program()
@@ -501,7 +522,8 @@ def main():
     while running:
         DeltaTime = time.time()-FrameStart
         if DeltaTime != 0:
-            print(round(1/DeltaTime))
+            pass
+            #print(round(1/DeltaTime))
         
         #print(DeltaTime)
         FrameStart = time.time()
@@ -882,4 +904,4 @@ def main():
     pygame.quit()
 
 if __name__ == "__main__":
-    main()
+    main(FRAGMENT_SHADER)
