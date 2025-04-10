@@ -8,6 +8,8 @@ import math
 import time
 import os
 
+import raycast
+
 from spiffmodel import SpiffModel
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
@@ -589,7 +591,11 @@ def main(FRAGMENT_SHADER=""):
 
     FrameStart = time.time()
     EnablePhysics = True
+    look_preview_pos = [0,0,0,2.0]
+    editor_camera_mouse_return_pos = pygame.mouse.get_pos()
+    current_selection = -1
     while running:
+        
         DeltaTime = time.time()-FrameStart
         if DeltaTime != 0:
             pass
@@ -598,9 +604,57 @@ def main(FRAGMENT_SHADER=""):
         #print(DeltaTime)
         FrameStart = time.time()
         i += 1
+
+        camera_dir[0]
+        select_x,select_y = pygame.mouse.get_pos()
+        select_x,select_y = select_x/WINDOW_WIDTH,select_y/WINDOW_HEIGHT
+        select_x,select_y = select_x*2,select_y*2
+        select_x,select_y = select_x-1,select_y-1
+        #print(select_x,select_y)
+        #print(pygame.mouse.get_pressed())
+        normalX,normalY,normalZ = 0,0,-1
+        normalX,normalY = select_x,-select_y
+        normalY,normalZ = (math.sin(camera_dir[0]) * normalY)-(math.cos(camera_dir[0]) * normalZ), (math.cos(camera_dir[0]) * normalY)+(math.sin(camera_dir[0]) * normalZ)
+
+        normalX,normalZ = (math.sin(camera_dir[1]) * normalX)-(math.cos(camera_dir[1]) * normalZ), (math.cos(camera_dir[1]) * normalX)+(math.sin(camera_dir[1]) * normalZ)
+        
+
+        #vec3 RotateOnX(vec3 Point,float angle){
+        #float rotatedY = (sin(angle) * Point.y)-(cos(angle) * Point.z);
+        #float rotatedZ = (cos(angle) * Point.y)+(sin(angle) * Point.z);
+        #return vec3(Point.x,rotatedY,rotatedZ);
+        #}
+        #vec3 RotateOnY(vec3 Point,float angle){
+        #float rotatedX = (sin(angle) * Point.x)-(cos(angle) * Point.z);
+        #float rotatedZ = (cos(angle) * Point.x)+(sin(angle) * Point.z);
+        #return vec3(rotatedX,Point.y,rotatedZ);
+        #}
+
+
+        #ray_dir = RotateOnX(ray_dir,Cam_XAngle);
+        #ray_dir = RotateOnY(ray_dir,Cam_YAngle);
+
+        camera_normal = np.array([normalX,normalY,normalZ])
+        hovering_selection = -1
+        for current_object_id in ObjectIDList:
+            select_Test_Metaball = []
+            for object_data,object_id in zip(ObjectMeshes,ObjectIDS):
+                if object_id == current_object_id:
+                    select_Test_Metaball.append(object_data)
+            look_pos = raycast.raymarch(camera_pos,camera_normal,select_Test_Metaball,threshold = len(select_Test_Metaball))
+            #print(look_pos)
+            if look_pos is not None:
+                hovering_selection = current_object_id
+                look_preview_pos = [look_pos[0],look_pos[1],look_pos[2],1.0]
+        #if hovering_selection != -1:
+         #   current_selection = hovering_selection
+        #print(look_preview_pos)
+        
         sphere_data = np.array([
             [0.0, 0.0, -5.0, 1.0],  # Sphere 1: center (0,0,-5), radius 2
             [math.sin(math.radians(i)) * 10, 0.0, -5, 1.0],  # Sphere 2: center (2,0,-5), radius 1
+            #look_preview_pos,
+            
         ], dtype=np.float32)
 
         #ObjectMeshes = np.array([
@@ -643,9 +697,23 @@ def main(FRAGMENT_SHADER=""):
                     onGround = camera_pos[1]-1 <= -2
                     if onGround:
                         PlayerVel[1] += jump_strength*DeltaTime
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3:
+                    print("ButtonDown")
+                    editor_camera_mouse_return_pos = pygame.mouse.get_pos()
+                    print(editor_camera_mouse_return_pos)
+            if event.type == pygame.MOUSEBUTTONUP:
+                print(event.button)
+                if (event.button) == 3:
+                    print(editor_camera_mouse_return_pos)
+                    pygame.mouse.set_pos(editor_camera_mouse_return_pos)
+                if (event.button) == 1:
+                    if hovering_selection != -1:
+                        current_selection = hovering_selection
             if event.type == pygame.MOUSEMOTION:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 mouse_dx,mouse_dy = event.rel
+                #pygame.mouse.set_pos(editor_camera_mouse_return_pos)
                 #if MouseGrabbed:
                  #   pygame.mouse.set_pos((WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
         if MouseGrabbed:
@@ -659,8 +727,16 @@ def main(FRAGMENT_SHADER=""):
             #mouse_x = mouse_x - WINDOW_WIDTH/2
             #mouse_dy = mouse_y - WINDOW_HEIGHT/2
         else:
-            mouse_dx = mouse_x - last_mouse_x
-            mouse_dy = mouse_y - last_mouse_y
+            #pass
+            #mouse_dx = mouse_x - last_mouse_x
+            #mouse_dy = mouse_y - last_mouse_y
+            if not pygame.mouse.get_pressed()[2]:
+                pygame.mouse.set_visible(True)
+                mouse_dx,mouse_dy = 0,0
+                
+            else:
+                pygame.mouse.set_pos(editor_camera_mouse_return_pos)
+                pygame.mouse.set_visible(False) # Hide cursor here
         last_mouse_x, last_mouse_y = mouse_x, mouse_y
 
         # Sensitivity for camera rotation
@@ -886,7 +962,7 @@ def main(FRAGMENT_SHADER=""):
             glUniform1i(glGetUniformLocation(object_mask_shader, "ObjectCount"), len(ObjectIDList))
             glUniform1i(glGetUniformLocation(object_mask_shader, "ObjectMeshCount"), len(ObjectIDS))
 
-            glUniform1f(glGetUniformLocation(object_mask_shader, "SelectedObject"), 0)
+            glUniform1f(glGetUniformLocation(object_mask_shader, "SelectedObject"), current_selection)
 
             #glActiveTexture(GL_TEXTURE0)
             #glBindTexture(GL_TEXTURE_3D, textureID)
