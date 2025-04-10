@@ -1022,6 +1022,8 @@ def main(FRAGMENT_SHADER=""):
 
             glUseProgram(comp_shader)
 
+            glUniform2f(glGetUniformLocation(comp_shader, "resolution"), WINDOW_WIDTH, WINDOW_HEIGHT)
+
             glUniform1i(glGetUniformLocation(comp_shader, "screenTexture"), 0)
             #
     
