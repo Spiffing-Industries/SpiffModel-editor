@@ -879,7 +879,7 @@ def main(FRAGMENT_SHADER=""):
             glUniform4fv(glGetUniformLocation(object_mask_shader, "Portals"), len(portal_data), portal_data.flatten())
             glUniform1iv(glGetUniformLocation(object_mask_shader, "OtherPortalIndex"), len(portal_data), other_portal_data.flatten())
             
-            glUniform4fv(glGetUniformLocation(object_mask_shader, "ObjectMeshes"), len(ObjectMeshes), ObjectMeshes.flatten())
+            glUniform4fv(glGetUniformLocation(object_mask_shader, "ObjectsMeshes"), len(ObjectMeshes), ObjectMeshes.flatten())
             glUniform1fv(glGetUniformLocation(object_mask_shader, "ObjectID"), len(ObjectIDS), ObjectIDS.flatten())
             glUniform1fv(glGetUniformLocation(object_mask_shader, "ObjectIDList"), len(ObjectIDList), ObjectIDList.flatten())
 
