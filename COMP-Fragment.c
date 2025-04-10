@@ -5,6 +5,7 @@ uniform sampler2D screenTexture;
 uniform sampler2D uiTexture;
 uniform sampler2D skyTexture;
 uniform sampler2D pauseTexture;
+uniform sampler2D outline_mask;
 
 void main()
 {
@@ -23,6 +24,8 @@ void main()
 
     vec4 skyColor = texture(skyTexture, TexCoords);
 
+    vec4 outlineMaskColor = texture(outline_mask, TexCoords);
+
 
     vec4 WorldAndSkyColor = (skyColor*(1-worldColor.a))+(worldColor*worldColor.a);
     if (worldColor.a == 0){
@@ -33,6 +36,7 @@ void main()
     //worldColor = texture(skyTexture, TexCoords);
     fragColor = (WorldAndSkyColor*(1-UI_alpha))+ (texture(uiTexture, TexCoords));
     fragColor = (fragColor*(1-texture(pauseTexture, TexCoords).a))+texture(pauseTexture, TexCoords);
+    fragColor = outlineMaskColor;
     //fragColor = texture(skyTexture, TexCoords);
 
 

@@ -77,6 +77,8 @@ uniform float time;
 
 uniform sampler3D texture3D;
 
+uniform float SelectedObject;
+
 bool isObjectAt(vec3 point) {
     //if (point.y < -2){
     //    return true;
@@ -327,6 +329,9 @@ void main() {
     vec3 normal = vec3(0,1,0);
     vec3 color_filter = vec3(1,1,1);
     float portal_distortion_multiplier = 1;
+    bool hit_selected_object = false;
+
+    vec4 DebugColor = vec4(0.0,0.0,0.0,1.0);
     for (float t = 0.0; t < max_distance; t += step_size) {
         current_pos += ray_dir * step_size;
         b += 1/(max_distance+step_size);
@@ -347,6 +352,8 @@ void main() {
             vec3 I = (ray_dir/normalize(ray_dir));
             vec3 N = (normal/normalize(normal));
             ray_dir = vec3(ray_dir.x,-(ray_dir.y),ray_dir.z);
+            hit = true;
+            break;
 
             //if (current_pos.y > -2.2){ 
             bool onLines = false;
@@ -430,6 +437,15 @@ void main() {
             int CurrentObjectMetaballCount = 0;
             float TotalDistance = 0;
             for (int j = 0;j < ObjectMeshCount;j++){
+                if (ObjectID[j]==SelectedObject){
+                    //hit_selected_object = true;
+                }
+
+                //DebugColor = vec4(TotalDistance,0.0,0.0,1.0);
+                vec3 center = ObjectsMeshes[j].xyz;
+                float radius = ObjectsMeshes[j].w;
+
+                TotalDistance += radius/(distance(current_pos,center));
                 
                 if (ObjectID[j] == CurrentObjectID){
 
@@ -442,10 +458,20 @@ void main() {
                     TotalDistance += radius/(distance(current_pos,center));
                     }
                     if (distance(current_pos, center) <= radius) {
+                        hit = true;
+                        Collision = true;
+                        hit_selected_object = true;
                         //return true;
-                     }
+                     
+                     if (CurrentObjectID==SelectedObject){
+                        hit_selected_object = true;
+                    }
+                
 
                 }
+            }
+            if (DebugColor.x < TotalDistance){
+            DebugColor = vec4(TotalDistance,0.0,0.0,1.0);}
              if (TotalDistance > 2){
                     //return true;
                     hit = true;
@@ -458,7 +484,11 @@ void main() {
                     //light_color = abs(normal);
                     //b = 0;
                     //b = 0;
+                    DebugColor = vec4(TotalDistance,0.0,0.0,1.0);
                     Collision = true;
+                    if (CurrentObjectID==SelectedObject){
+                    hit_selected_object = true;
+                    }
                     break;
 
                     }
@@ -471,7 +501,7 @@ void main() {
 
         }
         if (Collision == true){
-            //break;
+           // break;
 
         }
         if (insideBox3D(current_pos,vec3(0,0,0),vec3(1,1,1))>0){
@@ -503,9 +533,11 @@ void main() {
 
         }
         fragColor = vec4(b*light_color*color_filter, 1.0); // Red for hit
+        fragColor = vec4(0.0,0.0,1.0,1.0);
         //fragColor = vec4(1, 0.0, 0.0, 1.0); // Red for hit
         //fragColor = vec4(abs(ray_dir),1.0);
     } else {
+        //fragColor = vec4(1.0,0.0,0.0,1.0);
         vec2 Noisepos = -vec2(camera_dir.y,camera_dir.x);
         //float noiseValue = perlinNoise(Noisepos+uv);
         float noiseValue = perlinNoise(uv);
@@ -513,7 +545,12 @@ void main() {
         fragColor = vec4(vec3(noiseValue * 0.5 + 0.5), 1.0);
 
         fragColor = vec4(0,0,0,0);
+        fragColor = vec4(1.0,0.0,0.0,1.0);
     }
-    normalColor = vec4(abs(ray_dir),1.0);
+    if(hit_selected_object){
+        fragColor = vec4(0.0,1.0,0.0,1.0);
+    }
+    //fragColor = DebugColor;
+    //fragColor = vec4(1.0,1.0,1.0,1.0);
     //fragColor = vec4(abs(ray_dir),1.0);
 }

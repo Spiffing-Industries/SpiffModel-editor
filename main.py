@@ -149,6 +149,10 @@ PAUSE_Vertex = load_shader_file("PAUSE-Vertex.c")
 PAUSE_Fragment = load_shader_file("PAUSE-Fragment.c")
 
 
+OBJECTMASK_Vertex = load_shader_file("ObjectMask-Vertex.c")
+OBJECTMASK_Fragment = load_shader_file("ObjectMask-Fragment.c")
+
+
 def create_shader_program():
     return compileProgram(
         compileShader(VERTEX_SHADER, GL_VERTEX_SHADER),
@@ -270,6 +274,8 @@ def main(FRAGMENT_SHADER=""):
     #shader = create_shader_program()
     shader = create_new_shader_program(VERTEX_SHADER,FRAGMENT_SHADER)
 
+    object_mask_shader = create_new_shader_program(OBJECTMASK_Vertex,OBJECTMASK_Fragment)
+
     
     blur_shader = create_post_shader_program()
 
@@ -282,6 +288,8 @@ def main(FRAGMENT_SHADER=""):
     sky_shader = create_new_shader_program(SKY_Vertex,SKY_Fragment)
 
     pause_shader = create_new_shader_program(PAUSE_Vertex,PAUSE_Fragment)
+
+    
 
     # Create FBO
     fbo = glGenFramebuffers(1)
@@ -342,6 +350,9 @@ def main(FRAGMENT_SHADER=""):
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
 
+    
+
+
 
     # Create Pause FBO
     pause_buffer = glGenFramebuffers(1)
@@ -358,6 +369,35 @@ def main(FRAGMENT_SHADER=""):
     # Attach the texture to the FBO
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, pause_render_texture, 0)
+
+    # (Optional) Create a renderbuffer for depth if needed
+    #rbo = glGenRenderbuffers(1)
+    #glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+    #glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT)
+    #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+
+    # Check for completeness
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        print("ERROR: Framebuffer is not complete!")
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+
+
+    # Create ObjectMask FBO
+    object_mask_buffer = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, object_mask_buffer)
+
+    # Create texture to render to
+    object_mask_render_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, object_mask_render_texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the texture to the FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, object_mask_render_texture, 0)
 
     # (Optional) Create a renderbuffer for depth if needed
     #rbo = glGenRenderbuffers(1)
@@ -788,6 +828,86 @@ def main(FRAGMENT_SHADER=""):
 
 
 
+        #Object Mask Code
+        #"""
+        #
+        glClear(GL_COLOR_BUFFER_BIT)
+        glBindFramebuffer(GL_FRAMEBUFFER, object_mask_buffer)
+        glUseProgram(object_mask_shader)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, object_mask_render_texture)
+
+
+        #metaball_location = glGetUniformLocation(object_mask_shader, "metaballs")
+        #metaball_count_location = glGetUniformLocation(object_mask_shader, "metaballcount")
+
+        #portal_location = glGetUniformLocation(object_mask_shader, "Portals")
+        #portal_count_location = glGetUniformLocation(object_mask_shader, "PortalCount")
+        #other_portal_location = glGetUniformLocation(object_mask_shader, "OtherPortalIndex")
+
+        #lights_location = glGetUniformLocation(object_mask_shader, "light_positions")
+        #lights_color_location = glGetUniformLocation(object_mask_shader, "light_colors")
+        #lights_amount_location = glGetUniformLocation(object_mask_shader, "light_count")
+
+        #object_meshes_location = glGetUniformLocation(object_mask_shader, "ObjectsMeshes")
+        #object_id_location = glGetUniformLocation(object_mask_shader, "ObjectID")
+        #object_id_list_location = glGetUniformLocation(object_mask_shader, "ObjectIDList")
+        #object_count_location = glGetUniformLocation(object_mask_shader, "ObjectCount")
+        #object_mesh_count_location = glGetUniformLocation(object_mask_shader, "ObjectMeshCount")
+        #glUniform1f(time_location, time.time())
+
+        try:
+            glUniform2f(glGetUniformLocation(object_mask_shader, "resolution"), WINDOW_WIDTH, WINDOW_HEIGHT)
+            #print(*camera_pos)
+            #print("glUniform3f(camera_pos_location, *camera_pos)")
+            glUniform3f(glGetUniformLocation(object_mask_shader, "camera_pos"), *camera_pos)
+            #print("glUniform3f(camera_dir_location, *camera_dir)")
+            glUniform3f(glGetUniformLocation(object_mask_shader, "camera_dir"), *camera_dir)
+            #
+            glUniform1i(glGetUniformLocation(object_mask_shader, "light_count"), len(light_positions))
+            glUniform3fv(glGetUniformLocation(object_mask_shader, "light_positions"), len(light_positions),light_positions.flatten())
+            glUniform3fv(glGetUniformLocation(object_mask_shader, "light_colors"), len(light_positions),lights_colors.flatten())
+
+
+
+            glUniform1i(glGetUniformLocation(object_mask_shader, "metaballcount"), len(sphere_data))
+            glUniform4fv(glGetUniformLocation(object_mask_shader, "metaballs"), len(sphere_data), sphere_data.flatten())
+
+            
+            glUniform1i(glGetUniformLocation(object_mask_shader, "PortalCount"), len(portal_data))
+            glUniform4fv(glGetUniformLocation(object_mask_shader, "Portals"), len(portal_data), portal_data.flatten())
+            glUniform1iv(glGetUniformLocation(object_mask_shader, "OtherPortalIndex"), len(portal_data), other_portal_data.flatten())
+            
+            glUniform4fv(glGetUniformLocation(object_mask_shader, "ObjectMeshes"), len(ObjectMeshes), ObjectMeshes.flatten())
+            glUniform1fv(glGetUniformLocation(object_mask_shader, "ObjectID"), len(ObjectIDS), ObjectIDS.flatten())
+            glUniform1fv(glGetUniformLocation(object_mask_shader, "ObjectIDList"), len(ObjectIDList), ObjectIDList.flatten())
+
+            glUniform1i(glGetUniformLocation(object_mask_shader, "ObjectCount"), len(ObjectIDList))
+            glUniform1i(glGetUniformLocation(object_mask_shader, "ObjectMeshCount"), len(ObjectIDS))
+
+            glUniform1f(glGetUniformLocation(object_mask_shader, "SelectedObject"), 0)
+
+            #glActiveTexture(GL_TEXTURE0)
+            #glBindTexture(GL_TEXTURE_3D, textureID)
+            #glUniform1i(glGetUniformLocation(object_mask_shader, "texture3D"), 0)
+        except Exception as e:
+            print(e)
+
+
+
+        
+
+        glUniform3f(glGetUniformLocation(object_mask_shader, "camera_dir"), *camera_dir)
+
+
+        glBindVertexArray(VAO)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        #"""
+
+
+
         #Sky Code
         #"""
         #
@@ -911,6 +1031,8 @@ def main(FRAGMENT_SHADER=""):
 
             glUniform1i(glGetUniformLocation(comp_shader, "pauseTexture"), 3)
 
+            glUniform1i(glGetUniformLocation(comp_shader, "outline_mask"), 4)
+
             glActiveTexture(GL_TEXTURE0+0)
             glBindTexture(GL_TEXTURE_2D, render_texture)
             glActiveTexture(GL_TEXTURE0+1)
@@ -919,6 +1041,8 @@ def main(FRAGMENT_SHADER=""):
             glBindTexture(GL_TEXTURE_2D, sky_render_texture)
             glActiveTexture(GL_TEXTURE0+3)
             glBindTexture(GL_TEXTURE_2D, pause_render_texture)
+            glActiveTexture(GL_TEXTURE0+4)
+            glBindTexture(GL_TEXTURE_2D, object_mask_render_texture)
             
             
             
