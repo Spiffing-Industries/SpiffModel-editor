@@ -7,6 +7,9 @@ from PIL import Image
 import math
 import time
 import os
+
+from spiffmodel import SpiffModel
+
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 # Window dimensions
 WINDOW_WIDTH = 800
@@ -402,13 +405,6 @@ def main(FRAGMENT_SHADER=""):
 
 
 
-
-
-
-
-    
-
-
     
     # Define a fullscreen quad
     quad_vertices = np.array([
@@ -444,8 +440,14 @@ def main(FRAGMENT_SHADER=""):
     except Exception as e:
         print(e)
         textureID = load_3d_texture("_internal/images")
+
+
+
     #glBindTexture(GL_TEXTURE_3D, textureID)
     #glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, Texwidth, Texheight, Texdepth, 0, GL_RGB, GL_FLOAT, data)
+
+
+
 
 
 
@@ -496,6 +498,34 @@ def main(FRAGMENT_SHADER=""):
     ObjectIDList = np.array([0], dtype=np.float32)
     ObjectIDS = np.array([0,0],dtype=np.float32)
 
+
+    
+    with SpiffModel.open("TestModel.spiffmodel") as file:
+        ObjectMeshes = []
+        ObjectIDS = []
+        for Object in file.getModelObjects():
+            x,y,z = [Object["position"][x] for x in ["x","y","z"]]
+            r = Object["radius"]
+            objectId = Object["objectID"]
+            ObjectMeshes.append([x,y,z,r])
+            ObjectIDS.append(objectId)
+
+        light_positions = []
+        lights_colors = []
+        for Light in file.getLightObjects():
+            x,y,z = [Light["position"][x] for x in ["x","y","z"]]
+            r,g,b = [Light["color"][x] for x in ["r","g","b"]]
+            r = Light["radius"]
+            light_positions.append([x,y,z,r])
+            lights_colors.append([r,g,b])
+
+    light_positions = np.array(light_positions,dtype=np.float32)
+    lights_colors = np.array(lights_colors,dtype=np.float32)
+    
+            
+    ObjectIDList = np.array(list(set(ObjectIDS)),dtype=np.float32)
+    ObjectIDS = np.array(ObjectIDS,dtype=np.float32)
+    ObjectMeshes = np.array(ObjectMeshes,dtype=np.float32)
 
     PlayerVel = np.array([0.0,0.0,0.0],dtype=np.float32)
 
