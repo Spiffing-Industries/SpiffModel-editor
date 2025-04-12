@@ -154,6 +154,9 @@ PAUSE_Fragment = load_shader_file("PAUSE-Fragment.c")
 OBJECTMASK_Vertex = load_shader_file("ObjectMask-Vertex.c")
 OBJECTMASK_Fragment = load_shader_file("ObjectMask-Fragment.c")
 
+GIZMO_Vertex = load_shader_file("Gizmo-Vertex.c")
+GIZMO_Fragment = load_shader_file("Gizmo-Fragment.c")
+
 
 def create_shader_program():
     return compileProgram(
@@ -236,7 +239,7 @@ def load_3d_texture(folder_path):
     return textureID
 
 
-def CreateRenderingTexture(create_depth_buffer=False):
+def CreateRenderingTexture(create_depth_buffer=False,WINDOW_WIDTH=400,WINDOW_HEIGHT = 300):
     # Create FBO
     fbo = glGenFramebuffers(1)
     glBindFramebuffer(GL_FRAMEBUFFER, fbo)
@@ -322,6 +325,9 @@ def main(FRAGMENT_SHADER=""):
 
     pause_shader = create_new_shader_program(PAUSE_Vertex,PAUSE_Fragment)
 
+
+    gizmo_shader = create_new_shader_program(GIZMO_Vertex,GIZMO_Fragment)
+
     
 
     # Create FBO
@@ -386,7 +392,15 @@ def main(FRAGMENT_SHADER=""):
 
     """
 
+    # Create Sky Bufffer
+
     sky_buffer,sky_render_texture = CreateRenderingTexture()
+
+
+
+
+    # Create Gizmo FBO
+    gizmo_buffer,gizmo_render_texture = CreateRenderingTexture(WINDOW_WIDTH = WINDOW_WIDTH,WINDOW_HEIGHT = WINDOW_HEIGHT)
 
 
 
@@ -966,7 +980,6 @@ def main(FRAGMENT_SHADER=""):
         #object_count_location = glGetUniformLocation(object_mask_shader, "ObjectCount")
         #object_mesh_count_location = glGetUniformLocation(object_mask_shader, "ObjectMeshCount")
         #glUniform1f(time_location, time.time())
-
         try:
             glUniform2f(glGetUniformLocation(object_mask_shader, "resolution"), WINDOW_WIDTH, WINDOW_HEIGHT)
             #print(*camera_pos)
@@ -1003,13 +1016,54 @@ def main(FRAGMENT_SHADER=""):
             #glUniform1i(glGetUniformLocation(object_mask_shader, "texture3D"), 0)
         except Exception as e:
             print(e)
-
-
-
-        
-
+            
         glUniform3f(glGetUniformLocation(object_mask_shader, "camera_dir"), *camera_dir)
 
+        glBindVertexArray(VAO)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        #"""
+
+        #Gizmo Code
+        #"""
+        #
+        glClear(GL_COLOR_BUFFER_BIT)
+        glBindFramebuffer(GL_FRAMEBUFFER, gizmo_buffer)
+        glUseProgram(gizmo_shader)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, gizmo_render_texture)
+        try:
+            glUniform2f(glGetUniformLocation(gizmo_shader, "resolution"), WINDOW_WIDTH, WINDOW_HEIGHT)
+            #print(*camera_pos)
+            #print("glUniform3f(camera_pos_location, *camera_pos)")
+            glUniform3f(glGetUniformLocation(gizmo_shader, "camera_pos"), *camera_pos)
+            #print("glUniform3f(camera_dir_location, *camera_dir)")
+            glUniform3f(glGetUniformLocation(gizmo_shader, "camera_dir"), *camera_dir)
+            #
+            glUniform1i(glGetUniformLocation(gizmo_shader, "light_count"), len(light_positions))
+            glUniform3fv(glGetUniformLocation(gizmo_shader, "light_positions"), len(light_positions),light_positions.flatten())
+            glUniform3fv(glGetUniformLocation(gizmo_shader, "light_colors"), len(light_positions),lights_colors.flatten())
+
+            glUniform1i(glGetUniformLocation(gizmo_shader, "metaballcount"), len(sphere_data))
+            glUniform4fv(glGetUniformLocation(gizmo_shader, "metaballs"), len(sphere_data), sphere_data.flatten())
+
+            glUniform1i(glGetUniformLocation(gizmo_shader, "PortalCount"), len(portal_data))
+            glUniform4fv(glGetUniformLocation(gizmo_shader, "Portals"), len(portal_data), portal_data.flatten())
+            glUniform1iv(glGetUniformLocation(gizmo_shader, "OtherPortalIndex"), len(portal_data), other_portal_data.flatten())
+            
+            glUniform4fv(glGetUniformLocation(gizmo_shader, "ObjectsMeshes"), len(ObjectMeshes), ObjectMeshes.flatten())
+            glUniform1fv(glGetUniformLocation(gizmo_shader, "ObjectID"), len(ObjectIDS), ObjectIDS.flatten())
+            glUniform1fv(glGetUniformLocation(gizmo_shader, "ObjectIDList"), len(ObjectIDList), ObjectIDList.flatten())
+
+            glUniform1i(glGetUniformLocation(gizmo_shader, "ObjectCount"), len(ObjectIDList))
+            glUniform1i(glGetUniformLocation(gizmo_shader, "ObjectMeshCount"), len(ObjectIDS))
+
+            #glUniform1f(glGetUniformLocation(gizmo_shader, "SelectedObject"), current_selection)
+        except Exception as e:
+            print(e)
+            
+        glUniform3f(glGetUniformLocation(gizmo_shader, "camera_dir"), *camera_dir)
 
         glBindVertexArray(VAO)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
@@ -1145,6 +1199,8 @@ def main(FRAGMENT_SHADER=""):
 
             glUniform1i(glGetUniformLocation(comp_shader, "outline_mask"), 4)
 
+            glUniform1i(glGetUniformLocation(comp_shader, "gizmoTexture"), 5)
+
             glActiveTexture(GL_TEXTURE0+0)
             glBindTexture(GL_TEXTURE_2D, render_texture)
             glActiveTexture(GL_TEXTURE0+1)
@@ -1155,6 +1211,8 @@ def main(FRAGMENT_SHADER=""):
             glBindTexture(GL_TEXTURE_2D, pause_render_texture)
             glActiveTexture(GL_TEXTURE0+4)
             glBindTexture(GL_TEXTURE_2D, object_mask_render_texture)
+            glActiveTexture(GL_TEXTURE0+5)
+            glBindTexture(GL_TEXTURE_2D, gizmo_render_texture)
             
             
             

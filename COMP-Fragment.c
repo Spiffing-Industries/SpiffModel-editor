@@ -7,6 +7,7 @@ uniform sampler2D uiTexture;
 uniform sampler2D skyTexture;
 uniform sampler2D pauseTexture;
 uniform sampler2D outline_mask;
+uniform sampler2D gizmoTexture;
 
 
 
@@ -82,6 +83,8 @@ void main()
 
 
     //fragColor = texture(skyTexture, TexCoords);
+
+    fragColor = texture(gizmoTexture, TexCoords);
 
 
 
