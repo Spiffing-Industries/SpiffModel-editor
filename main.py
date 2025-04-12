@@ -236,6 +236,40 @@ def load_3d_texture(folder_path):
     return textureID
 
 
+def CreateRenderingTexture(create_depth_buffer=False):
+    # Create FBO
+    fbo = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+
+    # Create texture to render to
+    render_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, render_texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the texture to the FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, render_texture, 0)
+    if create_depth_buffer:
+        # (Optional) Create a renderbuffer for depth if needed
+        rbo = glGenRenderbuffers(1)
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT)
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+
+    # Check for completeness
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        print("ERROR: Framebuffer is not complete!")
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+    if create_depth_buffer:
+        return fbo,render_texture,rbo
+    return fbo,render_texture
+
+
+
 
 
 
@@ -277,14 +311,11 @@ def main(FRAGMENT_SHADER=""):
     shader = create_new_shader_program(VERTEX_SHADER,FRAGMENT_SHADER)
 
     object_mask_shader = create_new_shader_program(OBJECTMASK_Vertex,OBJECTMASK_Fragment)
-
     
     blur_shader = create_post_shader_program()
 
-
     ui_shader = create_new_shader_program(UI_Vertex,UI_Fragment)
 
-    
     comp_shader = create_new_shader_program(COMP_Vertex,COMP_Fragment)
 
     sky_shader = create_new_shader_program(SKY_Vertex,SKY_Fragment)
@@ -319,10 +350,11 @@ def main(FRAGMENT_SHADER=""):
     if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
         print("ERROR: Framebuffer is not complete!")
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
+    
 
 
 
-
+    """
 
     # Create Sky FBO
     sky_buffer = glGenFramebuffers(1)
@@ -352,7 +384,9 @@ def main(FRAGMENT_SHADER=""):
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
 
-    
+    """
+
+    sky_buffer,sky_render_texture = CreateRenderingTexture()
 
 
 
