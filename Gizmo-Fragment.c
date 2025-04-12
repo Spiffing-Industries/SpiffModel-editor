@@ -1,12 +1,12 @@
 #version 330 core
 
-
-
 #ifdef GL_ES
 precision mediump float;
 #endif
 out vec4 fragColor;
 out vec4 normalColor;
+
+
 
 // Function to create a pseudo-random gradient vector
 vec2 randomGradient(vec2 coord) {
@@ -78,10 +78,6 @@ uniform float time;
 uniform sampler3D texture3D;
 
 bool isObjectAt(vec3 point) {
-    //if (point.y < -2){
-    //    return true;
-
-    //}
     float TotalDistance = 0;
     for (int i = 0; i < metaballcount; i++) {
         vec3 center = metaballs[i].xyz;
@@ -89,9 +85,7 @@ bool isObjectAt(vec3 point) {
         if (distance(point,center) > 0){
             TotalDistance += radius/(distance(point,center));
         }
-        if (distance(point, center) <= radius) {
-            //return true;
-        }
+        if (distance(point, center) <= radius) {}
     if (TotalDistance > metaballcount){
     return true;
     }
@@ -109,17 +103,10 @@ bool CollidingWithPortal(vec3 point){
         if ((center-point).z > 0){
             return false;
         }
-
-        //if ((center-point).z < -0.1){
-        //    return false;
-       // }
-        //return true;
         if (distance(point, center) <= radius){
         if (distance(point, center) <= radius-0.2){
             return false;
         }
-        //vec4 OtherPortal = Portals[OtherPortalIndex[i]];
-        //vec3 PortalOffset = portal.xyz - OtherPortal.xyz;
             return true;
         }
     }
@@ -141,8 +128,6 @@ bool CollidingWithPortalFrame(vec3 point){
         if (distance(point, center) <= radius-0.2){
             return false;
         }
-        //vec4 OtherPortal = Portals[OtherPortalIndex[i]];
-        //vec3 PortalOffset = portal.xyz - OtherPortal.xyz;
             return true;
         }
     }
@@ -164,7 +149,6 @@ vec3 GetPortalRayOffset(vec3 point){
             return vec3(0.0,0.0,0.0);
         }
         vec4 OtherPortal = Portals[OtherPortalIndex[i]];
-        //vec3 PortalOffset = portal.xyz - OtherPortal.xyz;
         vec3 PortalOffset = OtherPortal.xyz - portal.xyz;
         
             
@@ -222,7 +206,6 @@ vec3 calculateNormal(vec3 point) {
 
     // Combine the partial derivatives into the gradient
     vec3 gradient = vec3(dx, dy, dz) / (2.0 * eps);
-    //vec3 gradient = vec3(dx, dy, dz);
     return normalize(gradient); // Normalize to get the unit normal
 }
 
@@ -272,9 +255,7 @@ vec3 calculateObjectNormal(vec3 point,float ID) {
     dy = (radius / distance(point + vec3(0.0, eps, 0.0), center)) - (radius / distance(point - vec3(0.0, eps, 0.0), center));
     dz = (radius / distance(point + vec3(0.0, 0.0, eps), center)) - (radius / distance(point - vec3(0.0, 0.0, eps), center));
 
-    // Combine the partial derivatives into the gradient
     vec3 gradient = vec3(dx, dy, dz) / (2.0 * eps);
-    //vec3 gradient = vec3(dx, dy, dz);
     return normalize(gradient); // Normalize to get the unit normal
 }
 
@@ -299,31 +280,22 @@ void main() {
     vec2 uv = gl_FragCoord.xy / resolution * 2.0 - 1.0;
     uv.y *= resolution.y / resolution.x;
 
-    //uv = uv* vec2(1.5,1.5);
-
-    //uv.x += perlinNoise(uv);
 
     vec3 ray_origin = camera_pos;
     
     vec3 ray_dir = normalize(vec3(uv.x, uv.y, -1.0)); // Ray direction in view space
-    //ray_dir.x += distance(randomGradient(uv+(1/time)),vec2(0,0));
     ray_dir = normalize(ray_dir);
-    //ray_dir = vec3()r;
     float Cam_XAngle = camera_dir.x;
     float Cam_YAngle = camera_dir.y;
     ray_dir = RotateOnX(ray_dir,Cam_XAngle);
     ray_dir = RotateOnY(ray_dir,Cam_YAngle);
-   // ray_dir = vec3((sin(Cam_XAngle)*uv.x)-(cos(Cam_XAngle)*uv.z),uv.y,(cos(Cam_XAngle)*uv.x)+(sin(Cam_XAngle)*uv.z));
     ray_dir = normalize(ray_dir);
-
     bool insidePortal = false;
-
     float max_distance = 50.0;
     max_distance = 10.0;
     float step_size = 0.1;
     vec3 current_pos = ray_origin;
     bool hit = false;
-    //hit = true;
     float b = 0;
     vec3 light_color = vec3(0,0,0);
     vec3 normal = vec3(0,1,0);
@@ -350,7 +322,6 @@ void main() {
             vec3 N = (normal/normalize(normal));
             ray_dir = vec3(ray_dir.x,-(ray_dir.y),ray_dir.z);
 
-            //if (current_pos.y > -2.2){ 
             bool onLines = false;
             if (mod(current_pos.x,1) > 0.9){
                 onLines = true;
@@ -367,10 +338,6 @@ void main() {
             break;
             }
             }
-            //ray_dir = I - 2 * dot(I,N) * N;
-            //b = 0;
-            //b = 0;
-            //break;
 
 
         }
@@ -385,23 +352,11 @@ void main() {
 
         }
         if (CollidingWithPortal(current_pos)){
-            //break;
-            //hit = true;
-            //b = 1;
-            //b = 0;
             
             if (insidePortal == false){
-            //ray_dir.x += distance(randomGradient(uv+(1/time)),vec2(0,0))*portal_distortion_multiplier;
-            //portal_distortion_multiplier = -portal_distortion_multiplier;
-            //color_filter = color_filter*(vec3(255,154,0)/255);
             current_pos = current_pos + GetPortalRayOffset(current_pos);
-            //ray_dir = ray_dir * vec3(1,1,-1);
-            //ray_dir.z = -abs(ray_dir.z);
             }
-            //current_pos = current_pos + GetPortalRayOffset(current_pos);
             insidePortal = true;
-            //light_color = vec3(0,0,1);
-            //break;
 
 
         }
@@ -410,20 +365,12 @@ void main() {
 
         }
         if (isObjectAt(current_pos)) {
-            //b = 0;
             hit = true;
-            //t++;
-            //current_pos += ray_dir;
             normal = calculateNormal(current_pos);
-            //normal = vec3(0,1,0);
             vec3 I = (ray_dir/normalize(ray_dir));
             vec3 N = (normal/normalize(normal));
             ray_dir = I - 2 * dot(I,N) * N;
-            //ray_dir = vec3(0,1,0);
-            //ray_dir.y += perlinNoise(uv);
             ray_dir = -normal;
-            //ray_dir.y = -(ray_dir.y);
-            //break;w
         }
         bool Collision = false;
         for (int i=0;i<ObjectCount;i++){
@@ -434,37 +381,24 @@ void main() {
             for (int j = 0;j < ObjectMeshCount;j++){
                 
                 if (ObjectID[j] == CurrentObjectID){
-
-
-                    
-                    //for (int i = 0; i < metaballcount; i++) {
                     vec3 center = ObjectsMeshes[j].xyz;
                     float radius = ObjectsMeshes[j].w;
                     if (distance(current_pos,center) > 0){
                     TotalDistance += radius/(distance(current_pos,center));
                     }
-                    if (distance(current_pos, center) <= radius) {
-                        //return true;
-                     }
+                    if (distance(current_pos, center) <= radius) {}
 
                 }
              if (TotalDistance > 2){
-                    //return true;
                     hit = true;
                     normal = calculateObjectNormal(current_pos,CurrentObjectID);
                     vec3 I = (ray_dir/normalize(ray_dir));
                     vec3 N = (normal/normalize(normal));
-                    //ray_dir = I - 2 * dot(I,N) * N;
                     ray_dir = -normal;
-                    //light_color = vec3(1,0,0);
-                    //light_color = abs(normal);
-                    //b = 0;
-                    //b = 0;
                     Collision = true;
                     break;
 
                     }
-                     //}
             }
         if (Collision == true){
             break;
@@ -473,26 +407,15 @@ void main() {
 
         }
         if (Collision == true){
-            //break;
 
         }
         if (insideBox3D(current_pos,vec3(0,0,0),vec3(1,1,1))>0){
-            //
-            //light_color = current_pos;
-            //color_filter *= normalize(texture(texture3D,current_pos.xyz).rgb+vec3(1,1,1));
-            if (texture(texture3D,current_pos.xyz).xyz == vec3(0,0,0)){
-                
-                //color_filter = vec3(1,1,1);
-            }else{
+            if (texture(texture3D,current_pos.xyz).xyz == vec3(0,0,0)){}else{
                 hit = true;
                 light_color = texture(texture3D,current_pos.xyz).xyz;
                 b = 0;
                 break;
-                
             }
-            
-            //b=0;
-            //break;
 
 
         }
@@ -500,22 +423,12 @@ void main() {
 
     if (hit) {
         b = 1-b;
-        if (b > 0){
-            //b = b*2;
-
-        }
+        if (b > 0){}
         fragColor = vec4(b*light_color*color_filter, 1.0); // Red for hit
         //fragColor = vec4(1, 0.0, 0.0, 1.0); // Red for hit
         //fragColor = vec4(abs(ray_dir),1.0);
     } else {
-        vec2 Noisepos = -vec2(camera_dir.y,camera_dir.x);
-        //float noiseValue = perlinNoise(Noisepos+uv);
-        float noiseValue = perlinNoise(uv);
-        fragColor = vec4(0.0, 0.0, 1.0, 1.0); // Blue for miss
-        fragColor = vec4(vec3(noiseValue * 0.5 + 0.5), 1.0);
-
         fragColor = vec4(0,0,0,0);
     }
-    normalColor = vec4(abs(ray_dir),1.0);
     //fragColor = vec4(abs(ray_dir),1.0);
 }
