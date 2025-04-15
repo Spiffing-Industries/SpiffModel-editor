@@ -75,6 +75,9 @@ uniform int OtherPortalIndex[16];
 
 uniform float time;
 
+uniform vec3 GizmoPos;
+uniform vec3 GizmoRotation;
+
 uniform sampler3D texture3D;
 
 bool isObjectAt(vec3 point) {
@@ -249,6 +252,8 @@ vec3 calculateObjectNormal(vec3 point,float ID) {
         dz += (radius / distance(point + vec3(0.0, 0.0, eps), center)) - (radius / distance(point - vec3(0.0, 0.0, eps), center));
         }
     }
+
+    return vec3(dx,dy,dz)/value;
     vec3 center = ObjectsMeshes[closestIndex].xyz;
     float radius = ObjectsMeshes[closestIndex].w;
     dx = (radius / distance(point + vec3(eps, 0.0, 0.0), center)) - (radius / distance(point - vec3(eps, 0.0, 0.0), center));
@@ -276,6 +281,15 @@ float insideBox3D(vec3 v, vec3 bottomLeft, vec3 topRight) {
     return s.x * s.y * s.z; 
 }
 
+float sdCappedCylinder( vec3 p, float h, float r )
+{
+  vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(r,h);
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+
+
+
 void main() {
     vec2 uv = gl_FragCoord.xy / resolution * 2.0 - 1.0;
     uv.y *= resolution.y / resolution.x;
@@ -301,9 +315,67 @@ void main() {
     vec3 normal = vec3(0,1,0);
     vec3 color_filter = vec3(1,1,1);
     float portal_distortion_multiplier = 1;
+
+
+    float t = 0.0;
+    normal = vec3(0,0,0);
+    light_color = vec3(0.1,0.1,0.1);
+    for (float k = 0.0; k < 3;k++){
+    for (float i = 0.0; i < max_distance; i += step_size) {
+        //current_pos += ray_dir * step_size;
+
+        
+        
+        float dis = sdCappedCylinder(current_pos,2.0,1.0);
+        t += dis;
+        current_pos = (ray_dir*t)+ray_origin;
+        if (dis<0.00001){
+            hit = true;
+            normal = vec3(1.0,1.0,1.0);
+            if (abs(current_pos.y-0.0)<2.0){
+            normal = vec3(current_pos.x-0,0.0,current_pos.z - 0);
+            }else{
+                if((current_pos.y-0.0)<0.0){
+                    normal = vec3(0.0,-1.0,0.0);
+                }else{
+                    normal = vec3(0.0,1.0,0.0);
+                }
+            }
+            //light_color = vec3(0.1,0.1,0.1);
+            for (int j = 0; j < light_count; j++) {
+                vec3 light_position = light_positions[j];
+                vec3 light_color_temp = vec3(light_colors[j]);
+                vec3 light_normal = normalize(light_position-current_pos);
+                float facing = dot(light_normal,normal);
+                float light_Distance = distance(light_position,current_pos);
+                if (light_Distance > 0){
+                float lightStrength = (100/(4*3*light_Distance*light_Distance))*facing;
+                if (lightStrength > 0){
+                //light_color += light_color_temp;
+                light_color += light_color_temp*lightStrength;
+                }}
+            }
+            break;
+        }
+        if (t>max_distance){
+            break;
+
+        }
+    }
+
+
+
+    }
+
+
+    max_distance = 0.0;
     for (float t = 0.0; t < max_distance; t += step_size) {
+
+
         current_pos += ray_dir * step_size;
         b += 1/(max_distance+step_size);
+
+
         for (int i = 0; i < light_count; i++) {
             vec3 light_position = light_positions[i];
             if (distance(light_position,current_pos) < 1){
@@ -314,6 +386,7 @@ void main() {
                 break;
             }
         }
+
         if (current_pos.y < -2){
             if (current_pos.y > -2.2){ 
             hit=true;
@@ -322,6 +395,9 @@ void main() {
             vec3 N = (normal/normalize(normal));
             ray_dir = vec3(ray_dir.x,-(ray_dir.y),ray_dir.z);
 
+
+
+            break;
             bool onLines = false;
             if (mod(current_pos.x,1) > 0.9){
                 onLines = true;
@@ -334,13 +410,16 @@ void main() {
             }
             if (onLines == true){
                 light_color = vec3(1.0,1.0,1.0);
+                
             b=0;
+            
             break;
             }
             }
 
 
         }
+
 
 
         if (CollidingWithPortalFrame(current_pos)){
@@ -371,6 +450,7 @@ void main() {
             vec3 N = (normal/normalize(normal));
             ray_dir = I - 2 * dot(I,N) * N;
             ray_dir = -normal;
+            break;
         }
         bool Collision = false;
         for (int i=0;i<ObjectCount;i++){
@@ -407,7 +487,7 @@ void main() {
 
         }
         if (Collision == true){
-
+            break;
         }
         if (insideBox3D(current_pos,vec3(0,0,0),vec3(1,1,1))>0){
             if (texture(texture3D,current_pos.xyz).xyz == vec3(0,0,0)){}else{
@@ -425,10 +505,13 @@ void main() {
         b = 1-b;
         if (b > 0){}
         fragColor = vec4(b*light_color*color_filter, 1.0); // Red for hit
+        fragColor = vec4((normal),1.0);
+        fragColor = vec4(light_color*color_filter, 1.0); 
         //fragColor = vec4(1, 0.0, 0.0, 1.0); // Red for hit
         //fragColor = vec4(abs(ray_dir),1.0);
     } else {
         fragColor = vec4(0,0,0,0);
     }
     //fragColor = vec4(abs(ray_dir),1.0);
+    
 }
