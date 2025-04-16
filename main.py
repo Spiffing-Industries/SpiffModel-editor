@@ -642,6 +642,9 @@ def main(FRAGMENT_SHADER=""):
     look_preview_pos = [0,0,0,2.0]
     editor_camera_mouse_return_pos = pygame.mouse.get_pos()
     current_selection = -1
+
+    prevPos = camera_pos.copy()
+    
     while running:
         
         DeltaTime = time.time()-FrameStart
@@ -894,6 +897,37 @@ def main(FRAGMENT_SHADER=""):
                 camera_pos[1] = -1
                 if PlayerVel[1] < 0:
                     PlayerVel[1] = 0
+
+        for portal_pos,i in zip(portal_data,range(len(portal_data))):
+            px,py,pz,pr = portal_pos
+            portal_pos = np.array([px,py,pz])
+            PortalOffset = (portal_pos-camera_pos)
+            dx,dy,dz = PortalOffset
+            #PortalOffset = PortalOffset+1
+            
+            #PlayerToPortalNormal = (PortalOffset-np.min(PortalOffset))/(np.max(PortalOffset)-np.min(PortalOffset))
+            #PlayerToPortalNormal = (PlayerToPortalNormal*2)-1
+            #print(PlayerToPortalNormal)
+            #facingPortal = np.dot(PlayerToPortalNormal,np.array([0,0,1]))
+            
+            facingPortal = np.dot(PortalOffset,np.array([0,0,1]))
+            #print(facingPortal,np.dot(PortalOffset,np.array([0,0,1])))
+            PrevPortalOffset = (portal_pos-prevPos)
+            prevFacingPortal = np.dot(PrevPortalOffset,np.array([0,0,1]))
+
+            #print(prevFacingPortal,facingPortal)
+            #print(camera_pos-prevPos)
+            if (prevFacingPortal>0) != (facingPortal>0):
+                if math.sqrt(dx**2+dz**2+dz**2) < pr:
+                    print(other_portal_data)
+                    other_portal_index = list(other_portal_data)[0][i]
+                    print("Teleport",portal_data[other_portal_index],other_portal_index)
+                    
+                    otherX,otherY,otherZ,_ = portal_data[other_portal_index]
+                    portalOffset = portal_pos - np.array([otherX,otherY,otherZ])
+                    camera_pos -= portalOffset
+        prevPos = camera_pos.copy()
+            
 
 
 
