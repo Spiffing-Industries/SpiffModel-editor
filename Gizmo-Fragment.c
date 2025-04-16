@@ -315,56 +315,137 @@ void main() {
     vec3 normal = vec3(0,1,0);
     vec3 color_filter = vec3(1,1,1);
     float portal_distortion_multiplier = 1;
-
+    //color_filter = vec3(0,0,0);
 
     float t = 0.0;
     normal = vec3(0,0,0);
     light_color = vec3(0.1,0.1,0.1);
+
+    vec3 gizmoPos = vec3(4,0,0);
+    light_color = vec3(0.1,0.1,0.1);
+    float prevDis = -1.0;
     for (float k = 0.0; k < 3;k++){
-    for (float i = 0.0; i < max_distance; i += step_size) {
-        //current_pos += ray_dir * step_size;
+        float t = 0.0;
+        current_pos = ray_origin;
+        for (float i = 0.0; i < max_distance; i += step_size) {
+            current_pos = (ray_dir*t)+ray_origin;
+            //current_pos += ray_dir * step_size;
+            vec3 color = vec3(1.0,1.0,1.0);
+            if (k==2.0){
+                //current_pos = current_pos - gizmoPos;
+                current_pos.y+=2;
+                current_pos.x += 2;
+                current_pos = vec3(current_pos.y,current_pos.x,current_pos.z);
+                color = vec3(1.0,0.0,0.0);
+                //current_pos += gizmoPos;
+            }
+            if (k==1.0){
+                //current_pos = current_pos - gizmoPos;
+                current_pos.z +=2;
+                current_pos.y += 2;
+                current_pos = vec3(current_pos.x,current_pos.z,current_pos.y);
+                color = vec3(0.0,0.0,1.0);
+                //current_pos += gizmoPos;
+            }if(k==0.0){
+                
+                color = vec3(0.0,1.0,0.0);
+            }
+            float dis = sdCappedCylinder(current_pos,2.0,0.25);
+            //hit=true;
+            //light_color = vec3(abs(dis),0.0,0.0);
+            t += dis*0.5;
+            current_pos = (ray_dir*t)+ray_origin;
+            if (k==2.0){
+                //current_pos = current_pos - gizmoPos;
+                current_pos.y +=2;
+                current_pos.x += 2;
+                current_pos = vec3(current_pos.y,current_pos.x,current_pos.z);
+                //current_pos += gizmoPos;
+            } if (k==1.0){
+                //current_pos = current_pos - gizmoPos;
+                current_pos.y +=2;
+                current_pos.x += 2;
+                current_pos = vec3(current_pos.x,current_pos.z,current_pos.y);
+                //current_pos += gizmoPos;
+            }
 
-        
-        
-        float dis = sdCappedCylinder(current_pos,2.0,1.0);
-        t += dis;
-        current_pos = (ray_dir*t)+ray_origin;
-        if (dis<0.00001){
-            hit = true;
-            normal = vec3(1.0,1.0,1.0);
-            if (abs(current_pos.y-0.0)<2.0){
-            normal = vec3(current_pos.x-0,0.0,current_pos.z - 0);
-            }else{
-                if((current_pos.y-0.0)<0.0){
-                    normal = vec3(0.0,-1.0,0.0);
+            if (prevDis == -1.0){
+                prevDis = t+1.0;
+            }
+            
+            if (dis<0.001 && (prevDis > t || !hit)){
+            //if (dis<0.001){
+                prevDis = t;
+                hit = true;
+                normal = vec3(1.0,1.0,1.0);
+                if (abs(current_pos.y-0.0)<2.0){
+                    normal = vec3(current_pos.x-0,0.0,current_pos.z - 0);
                 }else{
-                    normal = vec3(0.0,1.0,0.0);
+                    if((current_pos.y-0.0)<0.0){
+                        normal = vec3(0.0,-1.0,0.0);
+                    }else{
+                        normal = vec3(0.0,1.0,0.0);
+                    }
                 }
+                current_pos = (ray_dir*t)+ray_origin;
+
+                if (k==2.0){
+                    //current_pos = current_pos - gizmoPos;
+                    current_pos.y +=2;
+                    current_pos.x += 2;
+                    normal = vec3(normal.y,normal.x,normal.z);
+                    current_pos = vec3(current_pos.y,current_pos.x,current_pos.z);
+                    //current_pos += gizmoPos;
+                } if (k==1.0){
+                    //current_pos = current_pos - gizmoPos;
+                    current_pos.y +=2;
+                    current_pos.x += 2;
+                    normal = vec3(normal.x,normal.z,normal.y);
+                    current_pos = vec3(current_pos.x,current_pos.z,current_pos.y);
+                    //current_pos += gizmoPos;
+                }
+                
+                for (int j = 0; j < light_count; j++) {
+                    vec3 light_position = light_positions[j];
+                    vec3 light_color_temp = vec3(light_colors[j]);
+                    //light_color_temp = vec3(1.0,1.0,1.0);
+                    //light_color_temp = vec3(1,0,0);
+                    vec3 light_normal = normalize(light_position-current_pos);
+                    float facing = dot(light_normal,normal);
+                    float light_Distance = distance(light_position,current_pos);
+                    //light_Distance = 1.0;
+                    if (light_Distance > 0){
+                    float lightStrength = (2048/(4*3*light_Distance*light_Distance))*facing;
+                    //lightStrength+=1;
+                    //lightStrength = 1.0;
+                    if (lightStrength > 0){
+                    //light_color += light_color_temp;
+                        vec3 light_add = abs(light_color_temp)*lightStrength*((color)+vec3(0,0,0));
+                        light_add = abs(light_color_temp)*lightStrength*color;
+                        //light_add += (lightStrength+1)*((color)+vec3(0,0,0));
+
+                        //light_color_temp.x = 0.0;
+                        //light_color += color;
+                        light_color += light_add;
+                        //light_color = color;
+                        //color_filter = vec3(1.0,1.0,1.0);
+
+                        //light_color = vec3(facing,0,0);
+                        //light_color = abs(light_add);
+                        //ight_color += light_color_temp*lightStrength*color;
+                        //color_filter += color;
+                    }
+                    light_color += 0.1*color;
+                }
+                }
+                break;
             }
-            //light_color = vec3(0.1,0.1,0.1);
-            for (int j = 0; j < light_count; j++) {
-                vec3 light_position = light_positions[j];
-                vec3 light_color_temp = vec3(light_colors[j]);
-                vec3 light_normal = normalize(light_position-current_pos);
-                float facing = dot(light_normal,normal);
-                float light_Distance = distance(light_position,current_pos);
-                if (light_Distance > 0){
-                float lightStrength = (100/(4*3*light_Distance*light_Distance))*facing;
-                if (lightStrength > 0){
-                //light_color += light_color_temp;
-                light_color += light_color_temp*lightStrength;
-                }}
+            if (t>max_distance){
+                
+                break;
+
             }
-            break;
         }
-        if (t>max_distance){
-            break;
-
-        }
-    }
-
-
-
     }
 
 
@@ -507,10 +588,12 @@ void main() {
         fragColor = vec4(b*light_color*color_filter, 1.0); // Red for hit
         fragColor = vec4((normal),1.0);
         fragColor = vec4(light_color*color_filter, 1.0); 
+        //fragColor = vec4(light_color, 1.0); 
+        //fragColor = vec4(color_filter,1.0);
         //fragColor = vec4(1, 0.0, 0.0, 1.0); // Red for hit
         //fragColor = vec4(abs(ray_dir),1.0);
     } else {
-        fragColor = vec4(0,0,0,0);
+        fragColor = vec4(0,0,0,0.0);
     }
     //fragColor = vec4(abs(ray_dir),1.0);
     

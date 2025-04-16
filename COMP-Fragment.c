@@ -84,7 +84,9 @@ void main()
 
     //fragColor = texture(skyTexture, TexCoords);
 
-    fragColor = texture(gizmoTexture, TexCoords);
+    fragColor = (fragColor*(1-texture(gizmoTexture, TexCoords).a))+texture(gizmoTexture, TexCoords);
+
+    //fragColor = texture(gizmoTexture, TexCoords);
 
 
 
